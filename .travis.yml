@@ -1,0 +1,28 @@
+language: node_js
+notifications:
+  email: false
+node_js:
+  - 'lts/carbon'
+cache:
+  directories:
+    - node_modules
+    - .tmp
+    - ~/.npm
+before_install:
+  - git fetch origin --tags
+  - yarn global add greenkeeper-lockfile@1
+before_script:
+  - greenkeeper-lockfile-update
+script:
+  - yarn test
+after_script:
+  - greenkeeper-lockfile-upload
+after_success:
+  # Report coverage to coveralls.io
+  - cat ./__coverage__/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+  - rimraf ./__coverage__
+  - yarn semantic-release
+
+branches:
+  except:
+    - /^v\d+\.\d+\.\d+$/

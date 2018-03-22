@@ -1,0 +1,12 @@
+!lib
+__tests__
+__coverage__
+scratch
+src
+.emdaer
+.eslintrc.yml
+.nvmrc
+.travis.yml
+*.config.js
+.flowconfig
+.gitignore

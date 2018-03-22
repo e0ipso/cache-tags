@@ -1,0 +1,10 @@
+# package directories
+/lib
+/config/local.*
+/scratch
+node_modules
+jspm_packages
+yarn-error.log
+
+# Jest data
+__coverage__
