@@ -19,12 +19,12 @@ export interface TagSetInterface {
   reset(): Promise<void>;
 
   /**
-   * Reset the tag and return the new tag identifier.
+   * Initialize the tag and return the new tag identifier.
    *
    * @param {string} name
    * @return {Promise<string>}
    */
-  resetTag(name: string): Promise<string>;
+  initTag(name: string): Promise<string>;
 
   /**
    * Get a unique namespace that changes when any of the tags are flushed.
@@ -40,6 +40,13 @@ export interface TagSetInterface {
    * @return {Promise<string>}
    */
   tagId(name: string): Promise<string>;
+
+  /**
+   * Get an array of tag identifiers for all of the tags in the set.
+   *
+   * @return {Promise<string[]>}
+   */
+  tagIds(): Promise<Array<string>>;
 
   /**
    * Get the tag identifier key for a given tag.

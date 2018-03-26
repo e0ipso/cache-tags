@@ -1,8 +1,10 @@
 // @flow
 
-const TaggedCache = require('./TaggedCache');
+const _ = require('lodash');
 const Promise = require('bluebird');
 const sha1 = require('sha1');
+
+const TaggedCache = require('./TaggedCache');
 
 /**
  * Forever reference key.
@@ -102,6 +104,50 @@ class RedisTaggedCache extends TaggedCache {
   }
 
   /**
+   * Lists all the entries for the provided tags.
+   *
+   * @return {Promise<Array>}
+   */
+  list(): Promise<Array<any>> {
+    const tagIdCorrespondence = [];
+    return this.tags.tagIds().then(tagIds => {
+      const refTypes = [REFERENCE_KEY_FOREVER, REFERENCE_KEY_STANDARD];
+      const tagRefs: { [string]: Array<string> } = tagIds
+        .reduce((carry, tagId) => Object.assign(
+          carry,
+          { [tagId]: refTypes.map(ref => this.referenceKey(tagId, ref)) }
+        ), {});
+      const pipeline = this.store.pipeline();
+      Object.keys(tagRefs).forEach(tagId => {
+        tagRefs[tagId].forEach(tagRef => {
+          tagIdCorrespondence.push(tagId);
+          pipeline.smembers(tagRef);
+        });
+      });
+      return pipeline.exec();
+    })
+      .then((res: Array<[?Error, Array<string>]>) => {
+        const errors = res.map(i => i[0]).filter(i => i);
+        if (errors.length) {
+          throw new Error(errors);
+        }
+        const references = res.map(i => i[1])
+          .reduce((carry: Map<string, Set<string>>, tagRefs, index) => {
+            const tagId = tagIdCorrespondence[index];
+            const refsForId: Set<string> = carry.get(tagId) || new Set();
+            tagRefs.forEach(tagRef => refsForId.add(tagRef));
+            carry.set(tagId, refsForId);
+            return carry;
+          }, new Map());
+        const arrays = Array.from(references.values()).map(s => Array.from(s));
+        return _.intersection(...arrays)
+          // We need to remove the Redis prefix. This is un-ideal.
+          .map(key => key.replace(new RegExp(`^${this.store.options.keyPrefix}`), ''));
+      })
+      .then(keys => keys.length ? this.store.mget(...keys) : []);
+  }
+
+  /**
    * Store standard key references into store.
    *
    * @param {string} namespace
@@ -187,7 +233,7 @@ class RedisTaggedCache extends TaggedCache {
     return this.store.smembers(referenceKey)
       .then(members => Array.from(new Set(members)))
       .then(members => {
-        if (!members) {
+        if (!members.length) {
           return Promise.resolve();
         }
         return Promise.map(

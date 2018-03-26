@@ -19,7 +19,7 @@
   "dependencies": {
     "bluebird": "^3.5.1",
     "ioredis": "^3.2.2",
-    "redlock": "^3.1.2",
+    "lodash": "^4.17.5",
     "sha1": "^1.1.1",
     "uuid": "^3.2.1"
   },
