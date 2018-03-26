@@ -823,7 +823,7 @@ block-stream@*:
   dependencies:
     inherits "~2.0.0"
 
-bluebird@^3.3.4, bluebird@^3.5.1:
+bluebird@^3.3.3, bluebird@^3.3.4, bluebird@^3.5.1:
   version "3.5.1"
   resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.5.1.tgz#d9551f9de98f1fcda1e683d17ee91a0602ee2eb9"
 
@@ -4390,6 +4390,12 @@ redis-commands@^1.2.0:
 redis-parser@^2.4.0:
   version "2.6.0"
   resolved "https://registry.yarnpkg.com/redis-parser/-/redis-parser-2.6.0.tgz#52ed09dacac108f1a631c07e9b69941e7a19504b"
+
+redlock@^3.1.2:
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/redlock/-/redlock-3.1.2.tgz#27c82534da8548027aa8d61084a08078ae74ed36"
+  dependencies:
+    bluebird "^3.3.3"
 
 regenerator-runtime@^0.10.5:
   version "0.10.5"

@@ -82,7 +82,7 @@ class TaggedCache {
    * Get a fully qualified key for a tagged item.
    *
    * @param {string} key
-   * @return {string}
+   * @return {Promise<string>}
    */
   taggedItemKey(key: string): Promise<string> {
     return this.tags.getNamespace().then(ns => `${sha1(ns)}:${key}`);
