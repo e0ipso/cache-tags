@@ -13,7 +13,7 @@
     "lint": "eslint --ignore-path .gitignore .",
     "flow": "flow src/",
     "precommit": "yarn build && yarn lint && yarn flow && yarn readme",
-    "prepush": "yarn lint && yarn flow && yarn test",
+    "prepush": "yarn lint && yarn flow",
     "commitmsg": "commitlint -e $GIT_PARAMS",
     "start-redis": "redis-server --loglevel verbose",
     "create-cluster": "./util/create-cluster start && ./util/create-cluster create",
