@@ -5,6 +5,7 @@ const Promise = require('bluebird');
 const sha1 = require('sha1');
 
 const TaggedCache = require('./TaggedCache');
+const handlePipelineResponse = require('./handlePipelineResponse');
 
 /**
  * Forever reference key.
@@ -126,12 +127,9 @@ class RedisTaggedCache extends TaggedCache {
       });
       return pipeline.exec();
     })
-      .then((res: Array<[?Error, Array<string>]>) => {
-        const errors = res.map(i => i[0]).filter(i => i);
-        if (errors.length) {
-          throw new Error(errors);
-        }
-        const references = res.map(i => i[1])
+      .then(handlePipelineResponse)
+      .then((res: Array<Array<string>>) => {
+        const references = res
           .reduce((carry: Map<string, Set<string>>, tagRefs, index) => {
             const tagId = tagIdCorrespondence[index];
             const refsForId: Set<string> = carry.get(tagId) || new Set();
@@ -140,11 +138,19 @@ class RedisTaggedCache extends TaggedCache {
             return carry;
           }, new Map());
         const arrays = Array.from(references.values()).map(s => Array.from(s));
-        return _.intersection(...arrays)
+        const intersection = arrays.length > 1
+          ? _.intersection(...arrays)
+          : arrays[0];
+        return intersection
           // We need to remove the Redis prefix. This is un-ideal.
           .map(key => key.replace(new RegExp(`^${this.store.options.keyPrefix}`), ''));
       })
-      .then(keys => keys.length ? this.store.mget(...keys) : []);
+      .then(keys => {
+        if (!keys.length) {
+          return [];
+        }
+        return Promise.all(keys.map(key => this.store.get(key)));
+      });
   }
 
   /**
@@ -178,7 +184,9 @@ class RedisTaggedCache extends TaggedCache {
    * @return {Promise<void>}
    */
   pushKeys(namespace: string, key: string, reference: string): Promise<void> {
-    const fullKey = `${this.store.options.keyPrefix}${sha1(namespace)}:${key}`;
+    const fullKey = this.store.options.keyPrefix
+      ? `${this.store.options.keyPrefix}${sha1(namespace)}:${key}`
+      : `${sha1(namespace)}:${key}`;
     const pipeline = this.store.pipeline();
     namespace.split('|').forEach(segment => {
       const referenceKey = this.referenceKey(segment, reference);
