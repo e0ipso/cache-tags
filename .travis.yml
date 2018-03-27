@@ -3,6 +3,8 @@ notifications:
   email: false
 node_js:
   - 'lts/carbon'
+services:
+  - redis-server
 cache:
   directories:
     - node_modules
@@ -11,12 +13,15 @@ cache:
 before_install:
   - git fetch origin --tags
   - yarn global add greenkeeper-lockfile@1
+  - gem install redis
 before_script:
   - greenkeeper-lockfile-update
+  - yarn create-cluster
 script:
   - yarn test
 after_script:
   - greenkeeper-lockfile-upload
+  - yarn destroy-cluster
 after_success:
   # Report coverage to coveralls.io
   - cat ./__coverage__/lcov.info | ./node_modules/coveralls/bin/coveralls.js

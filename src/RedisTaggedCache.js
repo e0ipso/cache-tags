@@ -2,10 +2,8 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const sha1 = require('sha1');
 
 const TaggedCache = require('./TaggedCache');
-const handlePipelineResponse = require('./handlePipelineResponse');
 
 /**
  * Forever reference key.
@@ -218,8 +216,11 @@ class RedisTaggedCache extends TaggedCache {
           .map(segment => this.referenceKey(segment, reference));
         const promises = referenceKeys.map(referenceKey =>
           this.deleteValues(referenceKey));
-        return Promise.all(promises).then(() => this.store.del(...referenceKeys));
+        return Promise.all(promises).then(() => referenceKeys);
       })
+      .then((referenceKeys) => Promise.all(
+        referenceKeys.map(rk => this.store.del(rk))
+      ))
       .then(() => {});
   }
 
@@ -238,7 +239,7 @@ class RedisTaggedCache extends TaggedCache {
         }
         return Promise.map(
           chunkArray(members, 1000),
-          (chunk) => this.store.del(chunk),
+          (chunk) => Promise.all(chunk.map(item => this.store.del(item))),
           { concurrency: 100 }
         );
       })

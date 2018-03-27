@@ -75,10 +75,12 @@ class TagSet implements TagSetInterface {
   tagIds(): Promise<Array<string>> {
     const names = this.getNames();
     const tagKeys = names.map(name => this.tagKey(name));
-    return this.store.mget(...tagKeys).then(tags => {
+    return Promise.all(tagKeys.map(k => this.store.get(k))).then(tags => {
       // If there is a tag associated to the name, get it. If not, create it.
-      const fillTags = (tag, index) => tag ? Promise.resolve(tag) : this.initTag(tagKeys[index]);
-      const promises = tags.map(fillTags);
+      const fillTags = (tag: string, index: number) => tag
+        ? Promise.resolve(tag)
+        : this.initTag(tagKeys[index]);
+      const promises = tags.map((t, index) => fillTags(t, index));
       return Promise.all(promises);
     });
   }

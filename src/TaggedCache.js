@@ -3,7 +3,7 @@
 import typeof Redis from 'ioredis';
 import type { TagSetInterface } from '../types/common';
 
-const sha1 = require('sha1');
+const _ = require('lodash');
 
 class TaggedCache {
   /**
@@ -74,7 +74,7 @@ class TaggedCache {
   /**
    * {@inheritdoc}
    */
-  itemKey(key: string): Promise<string> {
+  itemKey(key: string): string {
     return this.taggedItemKey(key);
   }
 
@@ -82,10 +82,10 @@ class TaggedCache {
    * Get a fully qualified key for a tagged item.
    *
    * @param {string} key
-   * @return {Promise<string>}
+   * @return {string}
    */
-  taggedItemKey(key: string): Promise<string> {
-    return this.tags.getNamespace().then(ns => `${sha1(ns)}:${key}`);
+  taggedItemKey(key: string): string {
+    return key;
   }
 
   /**
@@ -95,7 +95,7 @@ class TaggedCache {
    * @return {Promise<Object>}
    */
   get(key: string): Promise<any> {
-    return this.itemKey(key).then(tKey => this.store.get(tKey));
+    return this.store.get(this.itemKey(key));
   }
 
   /**
@@ -107,8 +107,9 @@ class TaggedCache {
    * @return {Promise<Object>}
    */
   getMultiple(keys: Array<string>): Promise<{ [string]: any }> {
-    return Promise.all(keys.map(key => this.itemKey(key)))
-      .then((tKeys => this.store.mget(tKeys)));
+    const tKeys = keys.map(k => this.itemKey(k));
+    return Promise.all(tKeys.map(tKey => this.store.get(tKey)))
+      .then(values => _.zipObject(tKeys, values));
   }
 
   /**
@@ -119,13 +120,12 @@ class TaggedCache {
    * @return {void}
    */
   set(key: string, value: any, ttl: ?number): Promise<void> {
-    return this.itemKey(key).then(tKey => {
-      let args = [tKey, value];
-      if (ttl) {
-        args = [...args, 'PX', ttl * 1000];
-      }
-      return this.store.set(...args);
-    });
+    const tKey = this.itemKey(key);
+    let args = [tKey, value];
+    if (ttl) {
+      args = [...args, 'PX', ttl * 1000];
+    }
+    return this.store.set(...args);
   }
 
   /**
@@ -137,7 +137,7 @@ class TaggedCache {
    */
   setMultiple(values: {[string]: any}, ttl: ?number): Promise<void> {
     return Promise.all(Object.keys(values).map(
-      key => this.itemKey(key) .then(tKey => [tKey, values[key]])
+      key => [this.itemKey(key), values[key]]
     ))
       .then(tuples => Promise.all(tuples.map(([key, value]) => {
         const args = [key, value];
@@ -157,7 +157,7 @@ class TaggedCache {
    * @return {void}
    */
   delete(key: string): Promise<void> {
-    return this.itemKey(key).then(this.store.del).then(() => {});
+    return this.store.del(this.itemKey(key)).then(() => {});
   }
 
   /**
@@ -167,9 +167,9 @@ class TaggedCache {
    * @return {void}
    */
   deleteMultiple(keys: Array<string>): Promise<void> {
-    return Promise.all(keys.map(this.itemKey))
-      .then(this.store.del)
-      .then(() => {});
+    return Promise.all(
+      keys.map(k => this.itemKey(k)).map(k => this.store.del(k))
+    ).then(() => {});
   }
 
   /**
@@ -190,14 +190,11 @@ class TaggedCache {
    * @return {Promise<void>}
    */
   add(key: string, value: any, ttl: ?number): Promise<void> {
-    return this.itemKey(key)
-      .then(tKey => {
-        let args = [tKey, value, 'NX'];
-        if (ttl) {
-          args = [...args, 'PX', ttl * 1000];
-        }
-        return this.store.set(...args);
-      });
+    let args = [this.itemKey(key), value, 'NX'];
+    if (ttl) {
+      args = [...args, 'PX', ttl * 1000];
+    }
+    return this.store.set(...args);
   }
 }
 

@@ -14,13 +14,15 @@
     "flow": "flow src/",
     "precommit": "yarn build && yarn lint && yarn flow && yarn readme",
     "prepush": "yarn lint && yarn flow && yarn test",
-    "commitmsg": "commitlint -e $GIT_PARAMS"
+    "commitmsg": "commitlint -e $GIT_PARAMS",
+    "start-redis": "redis-server --loglevel verbose",
+    "create-cluster": "./util/create-cluster start && ./util/create-cluster create",
+    "destroy-cluster": "./util/create-cluster stop && ./util/create-cluster clean"
   },
   "dependencies": {
     "bluebird": "^3.5.1",
     "ioredis": "^3.2.2",
     "lodash": "^4.17.5",
-    "sha1": "^1.1.1",
     "uuid": "^3.2.1"
   },
   "devDependencies": {

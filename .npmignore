@@ -3,6 +3,7 @@ __tests__
 __coverage__
 scratch
 src
+util
 .emdaer
 .eslintrc.yml
 .nvmrc
