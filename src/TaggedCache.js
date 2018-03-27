@@ -139,18 +139,14 @@ class TaggedCache {
     return Promise.all(Object.keys(values).map(
       key => this.itemKey(key) .then(tKey => [tKey, values[key]])
     ))
-      .then(tuples => {
+      .then(tuples => Promise.all(tuples.map(([key, value]) => {
+        const args = [key, value];
         if (ttl) {
-          // Since we cannot use mset we will use a pipeline.
-          const pipeline = this.store.pipeline();
-          const millis = ttl * 1000;
-          tuples.forEach(([key, value]) =>
-            pipeline.set(key, value, 'PX', millis));
-          return pipeline.exec();
+          args.push('PX');
+          args.push(ttl * 1000);
         }
-        // If there is no TTL we can set them using the mset command.
-        return this.store.mset(tuples);
-      })
+        return this.store.set(...args);
+      })))
       .then(() => {});
   }
 

@@ -118,29 +118,23 @@ class RedisTaggedCache extends TaggedCache {
           carry,
           { [tagId]: refTypes.map(ref => this.referenceKey(tagId, ref)) }
         ), {});
-      const pipeline = this.store.pipeline();
-      Object.keys(tagRefs).forEach(tagId => {
-        tagRefs[tagId].forEach(tagRef => {
+      const prms = Object.keys(tagRefs).map(tagId => Promise.all(
+        tagRefs[tagId].map(tagRef => {
           tagIdCorrespondence.push(tagId);
-          pipeline.smembers(tagRef);
-        });
-      });
-      return pipeline.exec();
+          return this.store.smembers(tagRef);
+        }
+      )));
+      return Promise.all(prms);
     })
-      .then(handlePipelineResponse)
+      .then((res: Array<Array<Array<string>>>) => res
+        .map(its => its.reduce((c, i) => [...c, ...i], [])))
       .then((res: Array<Array<string>>) => {
-        const references = res
-          .reduce((carry: Map<string, Set<string>>, tagRefs, index) => {
-            const tagId = tagIdCorrespondence[index];
-            const refsForId: Set<string> = carry.get(tagId) || new Set();
-            tagRefs.forEach(tagRef => refsForId.add(tagRef));
-            carry.set(tagId, refsForId);
-            return carry;
-          }, new Map());
-        const arrays = Array.from(references.values()).map(s => Array.from(s));
-        const intersection = arrays.length > 1
-          ? _.intersection(...arrays)
-          : arrays[0];
+        if (!res.length) {
+          return [];
+        }
+        const intersection = res.length > 1
+          ? _.intersection(...res)
+          : res[0];
         return intersection
           // We need to remove the Redis prefix. This is un-ideal.
           .map(key => key.replace(new RegExp(`^${this.store.options.keyPrefix}`), ''));
@@ -185,14 +179,12 @@ class RedisTaggedCache extends TaggedCache {
    */
   pushKeys(namespace: string, key: string, reference: string): Promise<void> {
     const fullKey = this.store.options.keyPrefix
-      ? `${this.store.options.keyPrefix}${sha1(namespace)}:${key}`
-      : `${sha1(namespace)}:${key}`;
-    const pipeline = this.store.pipeline();
-    namespace.split('|').forEach(segment => {
+      ? `${this.store.options.keyPrefix}${key}`
+      : key;
+    return Promise.all(namespace.split('|').map(segment => {
       const referenceKey = this.referenceKey(segment, reference);
-      pipeline.sadd(referenceKey, fullKey);
-    });
-    return pipeline.exec();
+      return this.store.sadd(referenceKey, fullKey);
+    }));
   }
 
   /**
