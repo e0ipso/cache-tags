@@ -27,10 +27,58 @@ Adds cache tags for bulk invalidation.
 <h2 id="install">Install</h2>
 <ol>
 <li><code>yarn add cache-tags</code></li>
+<li><a href="https://redis.io/download">Install Redis</a> normally. If you want to spin up
+a local cluster for testing you can use: <code>yarn create-cluster</code> and
+<code>yarn destroy-cluster</code>.</li>
 </ol>
 <h2 id="why-">Why?</h2>
+<p>If you need to invalidate cache entries that are related to each other, or just
+list these cache entries that relate to each other you can use tags. You will
+need to add the tags to the cache entries to be able to retrieve them later.</p>
+<p>This module only supports Redis as the cache back-end at the moment. It is
+tested against a single node and a cluster of 3 masters and 3 replicas.</p>
 <h2 id="usage">Usage</h2>
-<pre><code class="lang-js">
+<p>If you want to see more usage examples, check the
+<a href="./__tests__/functional.js">functional tests</a>.</p>
+<p>This project uses <a href="https://www.npmjs.com/package/ioredis">ioredis</a> as the Redis
+client. All the options for that project are available here.</p>
+<pre><code class="lang-js">const TaggableRedis = require(&#39;cache-tags&#39;);
+
+// Initialize the Redis client as you would using ioredis.
+const redis = new TaggableRedis(&#39;127.0.0.1:6379&#39;);
+// Now you can use `redis` as you would with ioredis, or you can enter tagged
+// mode.
+Promise.resolve()
+  // Use .tags to enter tagged mode, then call set or get.
+  .then(() =&gt;
+    Promise.all([
+      redis.tags([&#39;first-tag&#39;]).set(&#39;cache-entry-1&#39;, &#39;Lorem&#39;, 1234),
+      redis.tags([&#39;first-tag&#39;, &#39;boring&#39;]).set(&#39;cache-entry-2&#39;, &#39;Ipsum&#39;, 2324),
+    ])
+  )
+  .then(() =&gt;
+    Promise.all([
+      // You can scope gets by enterign tagged mode.
+      redis.tags([&#39;first-tag&#39;]).get(&#39;cache-entry-1&#39;),
+      // Or you can get the item as you would do normally.
+      redis.get(&#39;cache-entry-2&#39;),
+    ])
+  )
+  .then(console.log) // [&#39;Lorem&#39;, &#39;Ipsum&#39;].
+  // You can also use tags to list items.
+  .then(() =&gt; redis.tags([&#39;first-tag&#39;]).list())
+  .then(console.log) // [&#39;Lorem&#39;, &#39;Ipsum&#39;].
+  .then(() =&gt; redis.tags([&#39;boring&#39;]).list())
+  .then(console.log) // [&#39;Ipsum&#39;].
+  // You can also use tags to invalidate items.
+  .then(() =&gt; redis.tags([&#39;first-tag&#39;]).list())
+  .then(() =&gt;
+    Promise.all([
+      redis.tags([&#39;first-tag&#39;]).get(&#39;cache-entry-1&#39;),
+      redis.get(&#39;cache-entry-2&#39;),
+    ])
+  )
+  .then(console.log); // []. Cache entries with tag &#39;first-tag&#39; are gone.
 </code></pre>
 <h2 id="contributors">Contributors</h2>
 <details>
