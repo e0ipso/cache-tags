@@ -18,29 +18,6 @@ const REFERENCE_KEY_FOREVER = 'forever_ref';
  */
 const REFERENCE_KEY_STANDARD = 'standard_ref';
 
-/**
- * Chunk an array into smaller arrays.
- *
- * @param {Array} array
- *   The array to chunk.
- * @param {number} chunkSize
- *   The number of items per chunk.
- *
- * @returns {Array[]}
- *   The array of chunks.
- *
- * @protected
- */
-function chunkArray(array: Array<*>, chunkSize: number): Array<Array<*>> {
-  let i;
-  let j;
-  const output = [];
-  for (i = 0, j = array.length; i < j; i += chunkSize) {
-    output.push(array.slice(i, i + chunkSize));
-  }
-  return output;
-}
-
 class RedisTaggedCache extends TaggedCache {
   /**
    * Store an item in the cache.
@@ -238,7 +215,7 @@ class RedisTaggedCache extends TaggedCache {
           return Promise.resolve();
         }
         return Promise.map(
-          chunkArray(members, 1000),
+          _.chunk(members, 1000),
           (chunk) => Promise.all(chunk.map(item => this.store.del(item))),
           { concurrency: 100 }
         );
