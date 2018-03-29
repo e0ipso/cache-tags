@@ -22,17 +22,19 @@ class RedisTaggedCache extends TaggedCache {
   /**
    * Store an item in the cache.
    *
-   * @param {string} key
-   * @param {mixed} value
-   * @param {int} ttl
-   * @return {Promise<void>}
+   * Takes the same arguments as ioredis set calls.
+   *
+   * @param {key} key
+   * @param {*} value
+   * @param {Array<*>} additionalArgs
+   * @return {void}
    */
-  set(key: string, value: any, ttl: ?number): Promise<void> {
-    const reference = ttl ? REFERENCE_KEY_STANDARD : REFERENCE_KEY_FOREVER;
+  set(key: string, value: any, ...additionalArgs: [string, number]): Promise<void> {
+    const reference = additionalArgs[1] ? REFERENCE_KEY_STANDARD : REFERENCE_KEY_FOREVER;
     return this.tags.getNamespace()
       .then(namespace => Promise.all([
         this.pushKeys(namespace, key, reference),
-        super.set(key, value, ttl),
+        super.set(key, value, ...additionalArgs),
       ]));
   }
 
