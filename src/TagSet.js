@@ -3,6 +3,7 @@
 import type Redis from 'ioredis';
 import type { TagSetInterface } from '../types/common';
 
+const Promise = require('bluebird');
 const { v4: uuid } = require('uuid');
 
 class TagSet implements TagSetInterface {

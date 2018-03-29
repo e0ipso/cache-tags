@@ -4,6 +4,7 @@ import typeof Redis from 'ioredis';
 import type { TagSetInterface } from '../types/common';
 
 const _ = require('lodash');
+const Promise = require('bluebird');
 
 class TaggedCache {
   /**
