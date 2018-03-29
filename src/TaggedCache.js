@@ -114,19 +114,50 @@ class TaggedCache {
   }
 
   /**
-   * Store an items in the cache for a given number of seconds.
+   * Store an item in the cache.
    *
-   * @param {Object} values
-   * @param {int} ttl
+   * Takes the same arguments as ioredis set calls.
+   *
+   * @param {key} key
+   * @param {*} value
+   * @param {Array<*>} additionalArgs
    * @return {void}
    */
-  set(key: string, value: any, ttl: ?number): Promise<void> {
+  set(key: string, value: any, ...additionalArgs: [string, number]): Promise<void> {
     const tKey = this.itemKey(key);
     let args = [tKey, value];
-    if (ttl) {
-      args = [...args, 'PX', ttl * 1000];
+    if (additionalArgs.length) {
+      args = [...args, ...additionalArgs];
     }
     return this.store.set(...args);
+  }
+
+  /**
+   * Store an item in the cache for a number of seconds.
+   *
+   * Takes the same arguments as ioredis set calls.
+   *
+   * @param {key} key
+   * @param {*} value
+   * @param {int} ttlSeconds
+   * @return {void}
+   */
+  setex(key: string, ttlSeconds: number, value: any): Promise<void> {
+    return this.set(key, value, 'EX', ttlSeconds);
+  }
+
+  /**
+   * Store an item in the cache for a number of milliseconds.
+   *
+   * Takes the same arguments as ioredis set calls.
+   *
+   * @param {key} key
+   * @param {*} value
+   * @param {int} ttlMillis
+   * @return {void}
+   */
+  psetex(key: string, ttlMillis: number, value: any): Promise<void> {
+    return this.set(key, value, 'PX', ttlMillis);
   }
 
   /**
