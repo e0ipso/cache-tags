@@ -13,7 +13,7 @@ const generateTest = (redis, numItems) => () => {
         .tags([`tag_${id % 2}`, `post_${id}`])
         .get(`post_${id}`)
     ));
-  expect.assertions(9);
+  expect.assertions(10);
   return (new Promise((resolve, reject) => {
     redis.on('ready', resolve);
     redis.on('error', reject);
@@ -43,6 +43,10 @@ const generateTest = (redis, numItems) => () => {
     })
     .then(() => redis.tags(['tag_0']).flush())
     .then(() => redis.tags(['tag_0']).get('post_0'))
+    .then(res => {
+      expect(res).toBeNull();
+    })
+    .then(() => redis.get('post_0'))
     .then(res => {
       expect(res).toBeNull();
     })
