@@ -55,10 +55,10 @@ This project uses [ioredis](https://www.npmjs.com/package/ioredis) as the Redis
 client. All the options for that project are available here.
 
 ```js
-const TaggableRedis = require('cache-tags');
+const { TaggableCache: Redis } = require('cache-tags'); 
 
 // Initialize the Redis client as you would using ioredis.
-const redis = new TaggableRedis('127.0.0.1:6379');
+const redis = new Redis('127.0.0.1:6379');
 // Now you can use `redis` as you would with ioredis, or you can enter tagged
 // mode.
 Promise.resolve()

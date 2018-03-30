@@ -1,4 +1,4 @@
-const TaggableRedis = require('../lib/TaggableRedis');
+const { TaggableCache: Redis } = require('../lib');
 
 const generateTest = (redis, numItems) => () => {
   const setData = () => Promise.all(Array(numItems).fill(0).map((v, i) => i)
@@ -69,7 +69,7 @@ describe('Cache Tags', () => {
     const numItems = 200;
 
     beforeAll(() => {
-      redis = new TaggableRedis('127.0.0.1:6379');
+      redis = new Redis('127.0.0.1:6379');
     });
     afterAll(() => {
       redis.disconnect();
@@ -81,7 +81,7 @@ describe('Cache Tags', () => {
     const numItems = 200;
 
     beforeAll(() => {
-      redis = new TaggableRedis.Cluster([
+      redis = new Redis.Cluster([
         '127.0.0.1:30000',
         '127.0.0.1:30001',
         '127.0.0.1:30002',

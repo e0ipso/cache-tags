@@ -42,10 +42,10 @@ tested against a single node and a cluster of 3 masters and 3 replicas.</p>
 <a href="./__tests__/functional.js">functional tests</a>.</p>
 <p>This project uses <a href="https://www.npmjs.com/package/ioredis">ioredis</a> as the Redis
 client. All the options for that project are available here.</p>
-<pre><code class="lang-js">const TaggableRedis = require(&#39;cache-tags&#39;);
+<pre><code class="lang-js">const { TaggableCache: Redis } = require(&#39;cache-tags&#39;);
 
 // Initialize the Redis client as you would using ioredis.
-const redis = new TaggableRedis(&#39;127.0.0.1:6379&#39;);
+const redis = new Redis(&#39;127.0.0.1:6379&#39;);
 // Now you can use `redis` as you would with ioredis, or you can enter tagged
 // mode.
 Promise.resolve()
