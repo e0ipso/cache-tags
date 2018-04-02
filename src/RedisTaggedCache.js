@@ -18,6 +18,12 @@ const REFERENCE_KEY_FOREVER = 'forever_ref';
  */
 const REFERENCE_KEY_STANDARD = 'standard_ref';
 
+type TagRefsPair = {
+  forever_ref: string,
+  standard_ref: string,
+};
+type TagRefsPairs = Array<TagRefsPair>;
+
 class RedisTaggedCache extends TaggedCache {
   /**
    * Store an item in the cache.
@@ -82,46 +88,42 @@ class RedisTaggedCache extends TaggedCache {
   }
 
   /**
+   * Delete cache data tagged with a set of tags.
+   *
+   * @return {Promise<void>}
+   *   Resolves when done.
+   */
+  deleteWithTags(): Promise<void> {
+    return this.fetchTaggedKeysByTag().then(res => {
+      const tagIds = Object.keys(res);
+      // Delete the references in the tags.
+      const tagPromises = tagIds.reduce((carry, tagId) => {
+        const tagRefStandard = this.referenceKey(tagId, REFERENCE_KEY_STANDARD);
+        const tagRefForever = this.referenceKey(tagId, REFERENCE_KEY_FOREVER);
+        return [
+          ...carry,
+          // The first position is for standard.
+          ...res[tagId][0].map(key => this.store.srem(tagRefStandard, key)),
+          // The first position is for forever.
+          ...res[tagId][1].map(key => this.store.srem(tagRefForever, key)),
+        ];
+      }, []);
+      // Delete the cache entries themselves.
+      const dataPromise = this.fetchTaggedKeys(res)
+        .then(keys => this.deleteMultiple(keys));
+      return Promise.all([...tagPromises, dataPromise]);
+    });
+  }
+
+  /**
    * Lists all the entries for the provided tags.
    *
    * @return {Promise<Array>}
    */
   list(): Promise<Array<any>> {
-    const tagIdCorrespondence = [];
-    return this.tags.tagIds().then(tagIds => {
-      const refTypes = [REFERENCE_KEY_FOREVER, REFERENCE_KEY_STANDARD];
-      const tagRefs: { [string]: Array<string> } = tagIds
-        .reduce((carry, tagId) => Object.assign(
-          carry,
-          { [tagId]: refTypes.map(ref => this.referenceKey(tagId, ref)) }
-        ), {});
-      const prms = Object.keys(tagRefs).map(tagId => Promise.all(
-        tagRefs[tagId].map(tagRef => {
-          tagIdCorrespondence.push(tagId);
-          return this.store.smembers(tagRef);
-        }
-      )));
-      return Promise.all(prms);
-    })
-      .then((res: Array<Array<Array<string>>>) => res
-        .map(its => its.reduce((c, i) => [...c, ...i], [])))
-      .then((res: Array<Array<string>>) => {
-        if (!res.length) {
-          return [];
-        }
-        const intersection = res.length > 1
-          ? _.intersection(...res)
-          : res[0];
-        return intersection
-          // We need to remove the Redis prefix. This is un-ideal.
-          .map(key => key.replace(new RegExp(`^${this.store.options.keyPrefix}`), ''));
-      })
-      .then(keys => {
-        if (!keys.length) {
-          return [];
-        }
-        return Promise.all(keys.map(key => this.store.get(key)));
-      });
+    return this.fetchTaggedKeys()
+      .then(keys => this.getMultiple(keys))
+      .then(res => Object.keys(res).map(k => res[k]));
   }
 
   /**
@@ -234,6 +236,59 @@ class RedisTaggedCache extends TaggedCache {
    */
   referenceKey(segment: string, suffix: string): string {
     return `${this.tagPrefix}${segment}:${suffix}`;
+  }
+
+  /**
+   * Utility function to get the cache entries associated with tags.
+   *
+   * @return {Promise<Array<string>>}
+   *   An internal structure to reuse on intermediate processes.
+   *
+   * @private
+   */
+  fetchTaggedKeysByTag(): Promise<Array<[string, TagRefsPairs]>> {
+    return this.tags.tagIds().then(tagIds => {
+      const prms = tagIds.map(tagId => {
+        const promisesPerReference = [
+          this.store.smembers(this.referenceKey(tagId, REFERENCE_KEY_STANDARD)),
+          this.store.smembers(this.referenceKey(tagId, REFERENCE_KEY_FOREVER)),
+        ];
+        return Promise.all(promisesPerReference);
+      });
+      return Promise.all(prms).then(res => _.zipObject(tagIds, res));
+    });
+  }
+
+  /**
+   * Fetch the keys for the provided combination of tags.
+   *
+   * @param {Array<[string, TagRefsPairs]>} [taggedKeysByTag]
+   *   You can pass this optionally if you calculated it earlier.
+   *
+   * @return {Promise<(Array<string>|*[])[]>}
+   *   The list of keys related to the tag set.
+   *
+   * @protected
+   */
+  fetchTaggedKeys(taggedKeysByTag: ?Array<[string, TagRefsPairs]>): Promise<Array<string>> {
+    const promise = taggedKeysByTag
+      ? Promise.resolve(taggedKeysByTag)
+      : this.fetchTaggedKeysByTag();
+    return promise
+      .then((res): Array<[string, TagRefsPairs]> => Object.keys(res)
+        .map(k => res[k])
+        .map((its) => its.reduce((c, i) => [...c, ...i], [])))
+      .then((res: Array<Array<string>>) => {
+        if (!res.length) {
+          return [];
+        }
+        const intersection = res.length > 1
+          ? _.intersection(..._.uniq(res))
+          : res[0];
+        return intersection
+          // We need to remove the Redis prefix. This is un-ideal.
+          .map(key => key.replace(new RegExp(`^${this.store.options.keyPrefix}`), ''));
+      });
   }
 }
 

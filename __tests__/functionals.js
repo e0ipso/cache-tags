@@ -2,18 +2,22 @@ const { TaggableCache: Redis } = require('../lib');
 
 const generateTest = (redis, numItems) => () => {
   const setData = () => Promise.all(Array(numItems).fill(0).map((v, i) => i)
-    .map(
-      id => redis
-        .tags([`tag_${id % 2}`, `post_${id}`])
-        .set(`post_${id}`, `Post ${id}!`)
-    ));
+    .map(id => {
+      const taggedClient = redis.tags([`tag_${id % 2}`, `post_${id}`]);
+      const args = [`post_${id}`, `Post ${id}!`];
+      // 50% of the time we enter.
+      if (Math.random() > 0.5) {
+        args.push('EX', 20000000);
+      }
+      return taggedClient.set(...args);
+    }));
   const getData = () => Promise.all(Array(numItems).fill(0).map((v, i) => i)
     .map(
       id => redis
         .tags([`tag_${id % 2}`, `post_${id}`])
         .get(`post_${id}`)
     ));
-  expect.assertions(10);
+  expect.assertions(11);
   return (new Promise((resolve, reject) => {
     redis.on('ready', resolve);
     redis.on('error', reject);
@@ -64,6 +68,11 @@ const generateTest = (redis, numItems) => () => {
     .then(() => redis.tags(['tag_1']).list())
     .then(res => {
       expect(res).toHaveLength(numItems / 2);
+    })
+    .then(() => redis.tags(['tag_1']).deleteWithTags())
+    .then(() => redis.tags(['tag_1']).list())
+    .then(res => {
+      expect(res).toHaveLength(0);
     });
 };
 
