@@ -1,23 +1,29 @@
 const { TaggableCache: Redis } = require('../lib');
 
 const generateTest = (redis, numItems) => () => {
-  const setData = () => Promise.all(Array(numItems).fill(0).map((v, i) => i)
-    .map(id => {
-      const taggedClient = redis.tags([`tag_${id % 2}`, `post_${id}`]);
-      const args = [`post_${id}`, `Post ${id}!`];
-      // 50% of the time we enter.
-      if (Math.random() > 0.5) {
-        args.push('EX', 20000000);
-      }
-      return taggedClient.set(...args);
-    }));
+  const setData = () => Promise.all([
+    ...Array(numItems).fill(0).map((v, i) => i)
+      .map(id => {
+        const taggedClient = redis.tags([`tag_${id % 2}`, `post_${id}`, 'cache-tag']);
+        const args = [`post_${id}`, `Post ${id}!`];
+        // 50% of the time we enter.
+        if (Math.random() > 0.5) {
+          args.push('EX', 20000000);
+        }
+        return taggedClient.set(...args);
+      }),
+    // Add an item that shares some tags, but not all. This is to make sure we
+    // don't delete tags inadvertently.
+    redis.tags(['foo', 'tag_1']).set('lorem', 'ipsum'),
+  ]);
   const getData = () => Promise.all(Array(numItems).fill(0).map((v, i) => i)
     .map(
       id => redis
         .tags([`tag_${id % 2}`, `post_${id}`])
         .get(`post_${id}`)
     ));
-  expect.assertions(11);
+
+  expect.assertions(12);
   return (new Promise((resolve, reject) => {
     redis.on('ready', resolve);
     redis.on('error', reject);
@@ -43,7 +49,7 @@ const generateTest = (redis, numItems) => () => {
     })
     .then(() => redis.tags(['tag_1']).list())
     .then(res => {
-      expect(res).toHaveLength(numItems / 2);
+      expect(res).toHaveLength(1 + numItems / 2);
     })
     .then(() => redis.tags(['tag_0']).flush())
     .then(() => redis.tags(['tag_0']).get('post_0'))
@@ -67,12 +73,17 @@ const generateTest = (redis, numItems) => () => {
     })
     .then(() => redis.tags(['tag_1']).list())
     .then(res => {
-      expect(res).toHaveLength(numItems / 2);
+      expect(res).toHaveLength(1 + numItems / 2);
     })
-    .then(() => redis.tags(['tag_1']).deleteWithTags())
-    .then(() => redis.tags(['tag_1']).list())
+    .then(() => redis.tags(['tag_1', 'cache-tag']).deleteWithTags())
+    .then(() => redis.tags(['tag_1', 'cache-tag']).list())
     .then(res => {
       expect(res).toHaveLength(0);
+    })
+    .then(() => redis.tags(['tag_1']).list())
+    .then(res => {
+      // There is the item tagged with 'tag_1' and 'foo'.
+      expect(res).toEqual(['ipsum']);
     });
 };
 

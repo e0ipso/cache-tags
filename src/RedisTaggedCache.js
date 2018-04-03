@@ -94,25 +94,30 @@ class RedisTaggedCache extends TaggedCache {
    *   Resolves when done.
    */
   deleteWithTags(): Promise<void> {
-    return this.fetchTaggedKeysByTag().then(res => {
-      const tagIds = Object.keys(res);
-      // Delete the references in the tags.
-      const tagPromises = tagIds.reduce((carry, tagId) => {
-        const tagRefStandard = this.referenceKey(tagId, REFERENCE_KEY_STANDARD);
-        const tagRefForever = this.referenceKey(tagId, REFERENCE_KEY_FOREVER);
-        return [
-          ...carry,
-          // The first position is for standard.
-          ...res[tagId][0].map(key => this.store.srem(tagRefStandard, key)),
-          // The first position is for forever.
-          ...res[tagId][1].map(key => this.store.srem(tagRefForever, key)),
-        ];
-      }, []);
-      // Delete the cache entries themselves.
-      const dataPromise = this.fetchTaggedKeys(res)
-        .then(keys => this.deleteMultiple(keys));
-      return Promise.all([...tagPromises, dataPromise]);
-    });
+    return this.fetchTaggedKeysByTag().then(res => Promise.all([
+      Promise.resolve(res),
+      this.fetchTaggedKeys(res),
+    ]))
+      .then(([res, keysToDelete]) => {
+        const tagIds = Object.keys(res);
+        const pairs = _.flatten(tagIds.map(tagId => {
+          const tagRefStandard = this.referenceKey(tagId, REFERENCE_KEY_STANDARD);
+          const tagRefForever = this.referenceKey(tagId, REFERENCE_KEY_FOREVER);
+          return _.unionWith(
+            // The first position is for standard.
+            res[tagId][0].map(key => [tagRefStandard, key]),
+            // The first position is for forever.
+            res[tagId][1].map(key => [tagRefForever, key]),
+            _.isEqual
+          );
+        }));
+        const deletablePairs = pairs.filter(pair => keysToDelete.indexOf(pair[1]) !== -1);
+        const tagPromises = deletablePairs
+          .map(([setKey, setMember]) => this.store.srem(setKey, setMember));
+        // Delete the cache entries themselves.
+        const dataPromise = this.deleteMultiple(keysToDelete);
+        return Promise.all([...tagPromises, dataPromise]);
+      });
   }
 
   /**
