@@ -1,6 +1,6 @@
 {
   "name": "cache-tags",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Adds cache tags for bulk invalidation.",
   "main": "lib/index.js",
   "author": "Mateu Aguiló Bosch <mateu.aguilo.bosch@gmail.com>",
