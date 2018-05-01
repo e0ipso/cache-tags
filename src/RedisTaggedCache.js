@@ -1,28 +1,11 @@
 // @flow
 
 const _ = require('lodash');
-const Promise = require('bluebird');
+const { map: promiseMap } = require('bluebird');
 
 const TaggedCache = require('./TaggedCache');
 
-/**
- * Forever reference key.
- *
- * @var string
- */
-const REFERENCE_KEY_FOREVER = 'forever_ref';
-/**
- * Standard reference key.
- *
- * @var string
- */
-const REFERENCE_KEY_STANDARD = 'standard_ref';
-
-type TagRefsPair = {
-  forever_ref: string,
-  standard_ref: string,
-};
-type TagRefsPairs = Array<TagRefsPair>;
+type TagRefs = Array<string>;
 
 class RedisTaggedCache extends TaggedCache {
   /**
@@ -36,12 +19,11 @@ class RedisTaggedCache extends TaggedCache {
    * @return {void}
    */
   set(key: string, value: any, ...additionalArgs: [string, number]): Promise<void> {
-    const reference = additionalArgs[1] ? REFERENCE_KEY_STANDARD : REFERENCE_KEY_FOREVER;
     return this.tags.getNamespace()
       .then(namespace => Promise.all([
-        this.pushKeys(namespace, key, reference),
+        this.pushKeys(namespace, key),
         super.set(key, value, ...additionalArgs),
-      ]));
+      ])).then(() => {});
   }
 
   /**
@@ -54,9 +36,9 @@ class RedisTaggedCache extends TaggedCache {
   increment(key: string, value: any = 1): Promise<void> {
     const nsPromise = this.tags.getNamespace();
     return Promise.all([
-      nsPromise.then(namespace => this.pushStandardKeys(namespace, key)),
+      nsPromise.then(namespace => this.pushKeys(namespace, key)),
       super.increment(key, value),
-    ]);
+    ]).then(() => {});
   }
 
   /**
@@ -69,9 +51,9 @@ class RedisTaggedCache extends TaggedCache {
   decrement(key: string, value: any = 1): Promise<void> {
     const nsPromise = this.tags.getNamespace();
     return Promise.all([
-      nsPromise.then(namespace => this.pushStandardKeys(namespace, key)),
+      nsPromise.then(namespace => this.pushKeys(namespace, key)),
       super.decrement(key, value),
-    ]);
+    ]).then(() => {});
   }
 
   /**
@@ -80,11 +62,7 @@ class RedisTaggedCache extends TaggedCache {
    * @return {Promise<void>}
    */
   flush(): Promise<void> {
-    return Promise.all([
-      this.deleteForeverKeys(),
-      this.deleteStandardKeys(),
-    ])
-      .then(() => super.flush());
+    return this.deleteKeys().then(() => super.flush());
   }
 
   /**
@@ -101,15 +79,8 @@ class RedisTaggedCache extends TaggedCache {
       .then(([res, keysToDelete]) => {
         const tagIds = Object.keys(res);
         const pairs = _.flatten(tagIds.map(tagId => {
-          const tagRefStandard = this.referenceKey(tagId, REFERENCE_KEY_STANDARD);
-          const tagRefForever = this.referenceKey(tagId, REFERENCE_KEY_FOREVER);
-          return _.unionWith(
-            // The first position is for standard.
-            res[tagId][0].map(key => [tagRefStandard, key]),
-            // The first position is for forever.
-            res[tagId][1].map(key => [tagRefForever, key]),
-            _.isEqual
-          );
+          const tagRef = this.referenceKey(tagId);
+          return res[tagId].map(key => [tagRef, key]);
         }));
         const deletablePairs = pairs.filter(pair => keysToDelete.indexOf(pair[1]) !== -1);
         const tagPromises = deletablePairs
@@ -132,28 +103,6 @@ class RedisTaggedCache extends TaggedCache {
   }
 
   /**
-   * Store standard key references into store.
-   *
-   * @param {string} namespace
-   * @param {string} key
-   * @return {Promise<void>}
-   */
-  pushStandardKeys(namespace: string, key: string): Promise<void> {
-    return this.pushKeys(namespace, key, REFERENCE_KEY_STANDARD);
-  }
-
-  /**
-   * Store forever key references into store.
-   *
-   * @param {string} namespace
-   * @param {string} key
-   * @return {Promise<void>}
-   */
-  pushForeverKeys(namespace: string, key: string): Promise<void> {
-    return this.pushKeys(namespace, key, REFERENCE_KEY_FOREVER);
-  }
-
-  /**
    * Store a reference to the cache key against the reference key.
    *
    * @param {string} namespace
@@ -161,32 +110,15 @@ class RedisTaggedCache extends TaggedCache {
    * @param {string} reference
    * @return {Promise<void>}
    */
-  pushKeys(namespace: string, key: string, reference: string): Promise<void> {
+  pushKeys(namespace: string, key: string): Promise<void> {
     const fullKey = this.store.options.keyPrefix
       ? `${this.store.options.keyPrefix}${key}`
       : key;
-    return Promise.all(namespace.split('|').map(segment => {
-      const referenceKey = this.referenceKey(segment, reference);
-      return this.store.sadd(referenceKey, fullKey);
-    }));
-  }
-
-  /**
-   * Delete all of the items that were stored forever.
-   *
-   * @return {Promise<void>}
-   */
-  deleteForeverKeys(): Promise<void> {
-    return this.deleteKeysByReference(REFERENCE_KEY_FOREVER);
-  }
-
-  /**
-   * Delete all standard items.
-   *
-   * @return {Promise<void>}
-   */
-  deleteStandardKeys(): Promise<void> {
-    return this.deleteKeysByReference(REFERENCE_KEY_STANDARD);
+    const referenceKeys = namespace.split('|')
+      .map(segment => this.referenceKey(segment));
+    return Promise.all(
+      referenceKeys.map(referenceKey => this.store.sadd(referenceKey, fullKey))
+    ).then(() => {});
   }
 
   /**
@@ -195,14 +127,12 @@ class RedisTaggedCache extends TaggedCache {
    * @param {string} reference
    * @return {void}
    */
-  deleteKeysByReference(reference: string): Promise<void> {
+  deleteKeys(): Promise<void> {
     return this.tags.getNamespace()
       .then(namespace => {
         const referenceKeys = namespace.split('|')
-          .map(segment => this.referenceKey(segment, reference));
-        const promises = referenceKeys.map(referenceKey =>
-          this.deleteValues(referenceKey));
-        return Promise.all(promises).then(() => referenceKeys);
+          .map(segment => this.referenceKey(segment));
+        return this.deleteValues(referenceKeys).then(() => referenceKeys);
       })
       .then((referenceKeys) => Promise.all(
         referenceKeys.map(rk => this.store.del(rk))
@@ -213,17 +143,20 @@ class RedisTaggedCache extends TaggedCache {
   /**
    * Delete item keys that have been stored against a reference.
    *
-   * @param {string} referenceKey
+   * @param {TagRefs} referenceKeys
    * @return {Promise<void>}
    */
-  deleteValues(referenceKey: string): Promise<void> {
-    return this.store.smembers(referenceKey)
+  deleteValues(referenceKeys: TagRefs): Promise<void> {
+    return Promise.all(
+      referenceKeys.map(referenceKey => this.store.smembers(referenceKey))
+    )
+      .then(batches => _.flatten(batches))
       .then(members => Array.from(new Set(members)))
       .then(members => {
         if (!members.length) {
           return Promise.resolve();
         }
-        return Promise.map(
+        return promiseMap(
           _.chunk(members, 1000),
           (chunk) => Promise.all(chunk.map(item => this.store.del(item))),
           { concurrency: 100 }
@@ -236,30 +169,23 @@ class RedisTaggedCache extends TaggedCache {
    * Get the reference key for the segment.
    *
    * @param {string} segment
-   * @param {string} suffix
    * @return {string}
    */
-  referenceKey(segment: string, suffix: string): string {
-    return `${this.tagPrefix}${segment}:${suffix}`;
+  referenceKey(segment: string): string {
+    return `${this.tagPrefix}${segment}`;
   }
 
   /**
    * Utility function to get the cache entries associated with tags.
    *
-   * @return {Promise<Array<string>>}
+   * @return {Promise<Array<[string, TagRefs]>>}
    *   An internal structure to reuse on intermediate processes.
    *
    * @private
    */
-  fetchTaggedKeysByTag(): Promise<Array<[string, TagRefsPairs]>> {
+  fetchTaggedKeysByTag(): Promise<{[string]: TagRefs}> {
     return this.tags.tagIds().then(tagIds => {
-      const prms = tagIds.map(tagId => {
-        const promisesPerReference = [
-          this.store.smembers(this.referenceKey(tagId, REFERENCE_KEY_STANDARD)),
-          this.store.smembers(this.referenceKey(tagId, REFERENCE_KEY_FOREVER)),
-        ];
-        return Promise.all(promisesPerReference);
-      });
+      const prms = tagIds.map(tagId => this.store.smembers(this.referenceKey(tagId)));
       return Promise.all(prms).then(res => _.zipObject(tagIds, res));
     });
   }
@@ -267,7 +193,7 @@ class RedisTaggedCache extends TaggedCache {
   /**
    * Fetch the keys for the provided combination of tags.
    *
-   * @param {Array<[string, TagRefsPairs]>} [taggedKeysByTag]
+   * @param {Array<[string, TagRefs]>} [taggedKeysByTag]
    *   You can pass this optionally if you calculated it earlier.
    *
    * @return {Promise<(Array<string>|*[])[]>}
@@ -275,15 +201,14 @@ class RedisTaggedCache extends TaggedCache {
    *
    * @protected
    */
-  fetchTaggedKeys(taggedKeysByTag: ?Array<[string, TagRefsPairs]>): Promise<Array<string>> {
+  fetchTaggedKeys(taggedKeysByTag: ?{[string]: TagRefs}): Promise<Array<string>> {
     const promise = taggedKeysByTag
       ? Promise.resolve(taggedKeysByTag)
       : this.fetchTaggedKeysByTag();
     return promise
-      .then((res): Array<[string, TagRefsPairs]> => Object.keys(res)
-        .map(k => res[k])
-        .map((its) => its.reduce((c, i) => [...c, ...i], [])))
-      .then((res: Array<Array<string>>) => {
+      .then((res): Array<TagRefs> => Object.keys(res)
+        .map(k => res[k]))
+      .then((res: Array<TagRefs>) => {
         if (!res.length) {
           return [];
         }

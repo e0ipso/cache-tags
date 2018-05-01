@@ -3,7 +3,6 @@
 import type Redis from 'ioredis';
 import type { TagSetInterface } from '../types/common';
 
-const Promise = require('bluebird');
 const { v4: uuid } = require('uuid');
 
 class TagSet implements TagSetInterface {
@@ -41,11 +40,13 @@ class TagSet implements TagSetInterface {
    */
   reset(): Promise<void> {
     // Generate new IDs for all the names and set them all at the same time.
-    const tuples = this.getNames().map(name => [
-      this.tagKey(name),
-      uuid().replace(/-/g, ''),
-    ]);
-    return this.store.mset(...tuples).then(() => {});
+    return Promise.all(this.getNames()
+      .map(name => [
+        this.tagKey(name),
+        uuid().replace(/-/g, ''),
+      ])
+      .map(tuple => this.store.set(...tuple)))
+      .then(() => {});
   }
 
   /**
