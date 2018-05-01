@@ -2,14 +2,14 @@
 
 import type { DebouncerInterface, InflightStore } from '../types/common';
 
-class Debouncer implements DebouncerInterface {
-  /**
-   * A map of commands in-flight to debounce.
-   *
-   * @var {InflightStore}
-   */
-  inflight: InflightStore;
+/**
+ * A map of commands in-flight to debounce.
+ *
+ * @var {InflightStore}
+ */
+const inflight: InflightStore = new Map();
 
+class Debouncer implements DebouncerInterface {
   /**
    * The store that resolves the commands.
    *
@@ -20,8 +20,7 @@ class Debouncer implements DebouncerInterface {
   /**
    * @inheritDoc
    */
-  constructor(inflight: InflightStore, backend: Object): void {
-    this.inflight = inflight;
+  constructor(backend: Object): void {
     this.backend = backend;
   }
 
@@ -29,18 +28,18 @@ class Debouncer implements DebouncerInterface {
    * @inheritDoc
    */
   debounce(command: string, ...args: Array<any>): Promise<*> {
-    const key = [command, args];
-    const debounced: ?Promise<*> = this.inflight.get(key);
+    const key = `${command}::${args.map(a => JSON.stringify(a)).join(':')}`;
+    const debounced: ?Promise<*> = inflight.get(key);
     if (debounced) {
       return debounced;
     }
     const promise = this.backend[command](...args).then((result) => {
       // Remove from in-flight when it resolves and return the results.
-      this.inflight.delete(key);
+      inflight.delete(key);
       return result;
     });
     // Add the promise to the in-flight map.
-    this.inflight.set(key, promise);
+    inflight.set(key, promise);
     return promise;
   }
 }

@@ -41,7 +41,7 @@ class TagSet implements TagSetInterface {
   constructor(store: Redis, names: Array<string>) {
     this.store = store;
     this.names = names;
-    this.debouncer = new Debouncer(new Map(), store);
+    this.debouncer = new Debouncer(store);
   }
 
   /**

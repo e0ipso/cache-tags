@@ -46,7 +46,7 @@ class TaggedCache {
     this.store = store;
     this.tags = tags;
     this.tagPrefix = 'tags/';
-    this.debouncer = new Debouncer(new Map(), store);
+    this.debouncer = new Debouncer(store);
   }
 
   /**

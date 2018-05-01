@@ -64,17 +64,16 @@ export interface TagSetInterface {
   getNames(): Array<string>;
 }
 
-export type InflightStore = Map<[string, Array<any>], Promise<*>>;
+export type InflightStore = Map<string, Promise<*>>;
+
 export interface DebouncerInterface {
   /**
    * Create a new TagSet instance.
    *
-   * @param  {InflightStore} inflight
-   *   A place to temporarily store in-flight information.
    * @param {Object} backend
    *   The store that resolves the commands.
    */
-  constructor(inflight: InflightStore, backend: Object): void;
+  constructor(backend: Object): void;
 
   /**
    * De-bounces a Redis command returning an instance of the in-flight promise.

@@ -39,9 +39,12 @@ const generateTest = (redis, numItems) => () => {
     .then(() => Promise.all([
       redis.tags(['tag_0']).get('post_0'),
       redis.get('post_0'),
+      // Generate duplicated gets to trigger the debouncer.
+      redis.tags(['tag_0']).debounce('get', 'post_0'),
+      redis.tags(['tag_0']).debounce('get', 'post_0'),
     ]))
     .then(res => {
-      expect(res).toEqual(['Post 0!', 'Post 0!']);
+      expect(res).toEqual(['Post 0!', 'Post 0!', 'Post 0!', 'Post 0!']);
     })
     .then(() => redis.tags(['tag_0']).list())
     .then(res => {
