@@ -14,7 +14,7 @@ Adds cache tags for bulk invalidation.
 </p><p></p>
 <hr>
 
-
+<!-- toc -->
 <ul>
 <li><a href="#install">Install</a></li>
 <li><a href="#why">Why?</a></li>
@@ -22,7 +22,7 @@ Adds cache tags for bulk invalidation.
 <li><a href="#contributors">Contributors</a></li>
 <li><a href="#license">License</a></li>
 </ul>
-
+<!-- tocstop -->
 <p>· <a href="https://travis-ci.org/e0ipso/cache-tags/"><img src="https://img.shields.io/travis/e0ipso/cache-tags.svg?style=flat-square" alt="Travis"></a> <a href="https://coveralls.io/github/e0ipso/cache-tags/"><img src="https://img.shields.io/coveralls/github/e0ipso/cache-tags.svg?style=flat-square" alt="Coverage"></a> <a href="https://github.com/emdaer/emdaer"><img src="https://img.shields.io/badge/📓-documented%20with%20emdaer-F06632.svg?style=flat-square" alt="Documented with emdaer"></a></p>
 <h2 id="install">Install</h2>
 <ol>
@@ -42,44 +42,46 @@ tested against a single node and a cluster of 3 masters and 3 replicas.</p>
 <a href="./__tests__/functional.js">functional tests</a>.</p>
 <p>This project uses <a href="https://www.npmjs.com/package/ioredis">ioredis</a> as the Redis
 client. All the options for that project are available here.</p>
-<pre><code class="lang-js">const { TaggableCache: Redis } = require(&#39;cache-tags&#39;);
+
+```js
+const { TaggableCache: Redis } = require('cache-tags');
 
 // Initialize the Redis client as you would using ioredis.
-const redis = new Redis(&#39;127.0.0.1:6379&#39;);
+const redis = new Redis('127.0.0.1:6379');
 // Now you can use `redis` as you would with ioredis, or you can enter tagged
 // mode.
 Promise.resolve()
   // Use .tags to enter tagged mode, then call set or get.
-  .then(() =&gt;
+  .then(() =>
     Promise.all([
-      redis.tags([&#39;first-tag&#39;]).set(&#39;cache-entry-1&#39;, &#39;Lorem&#39;, 1234),
-      redis.tags([&#39;first-tag&#39;, &#39;boring&#39;]).set(&#39;cache-entry-2&#39;, &#39;Ipsum&#39;, 2324),
+      redis.tags(['first-tag']).set('cache-entry-1', 'Lorem', 1234),
+      redis.tags(['first-tag', 'boring']).set('cache-entry-2', 'Ipsum', 2324),
     ])
   )
-  .then(() =&gt;
+  .then(() =>
     Promise.all([
       // You can scope gets by enterign tagged mode.
-      redis.tags([&#39;first-tag&#39;]).get(&#39;cache-entry-1&#39;),
+      redis.tags(['first-tag']).get('cache-entry-1'),
       // Or you can get the item as you would do normally.
-      redis.get(&#39;cache-entry-2&#39;),
+      redis.get('cache-entry-2'),
     ])
   )
-  .then(console.log) // [&#39;Lorem&#39;, &#39;Ipsum&#39;].
+  .then(console.log) // ['Lorem', 'Ipsum'].
   // You can also use tags to list items.
-  .then(() =&gt; redis.tags([&#39;first-tag&#39;]).list())
-  .then(console.log) // [&#39;Lorem&#39;, &#39;Ipsum&#39;].
-  .then(() =&gt; redis.tags([&#39;boring&#39;]).list())
-  .then(console.log) // [&#39;Ipsum&#39;].
+  .then(() => redis.tags(['first-tag']).list())
+  .then(console.log) // ['Lorem', 'Ipsum'].
+  .then(() => redis.tags(['boring']).list())
+  .then(console.log) // ['Ipsum'].
   // You can also use tags to invalidate items.
-  .then(() =&gt; redis.tags([&#39;first-tag&#39;]).list())
-  .then(() =&gt;
+  .then(() => redis.tags(['first-tag']).list())
+  .then(() =>
     Promise.all([
-      redis.tags([&#39;first-tag&#39;]).get(&#39;cache-entry-1&#39;),
-      redis.get(&#39;cache-entry-2&#39;),
+      redis.tags(['first-tag']).get('cache-entry-1'),
+      redis.get('cache-entry-2'),
     ])
   )
-  .then(console.log); // []. Cache entries with tag &#39;first-tag&#39; are gone.
-</code></pre>
+  .then(console.log); // []. Cache entries with tag 'first-tag' are gone.
+```
 <h2 id="contributors">Contributors</h2>
 <details>
 <summary><strong>Contributors</strong></summary><br>
