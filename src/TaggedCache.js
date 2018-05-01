@@ -1,9 +1,10 @@
 // @flow
 
 import typeof Redis from 'ioredis';
-import type { TagSetInterface } from '../types/common';
+import type { DebouncerInterface, TagSetInterface } from '../types/common';
 
 const _ = require('lodash');
+const Debouncer = require('./Debouncer');
 
 class TaggedCache {
   /**
@@ -28,11 +29,11 @@ class TaggedCache {
   tagPrefix: string;
 
   /**
-   * A map of commands in-flight to debounce.
+   * The debouncer.
    *
-   * @var {Map}
+   * @var {DebouncerInterface}
    */
-  inflight: Map<[string, Array<any>], Promise<*>>;
+  debouncer: DebouncerInterface;
 
   /**
    * Create a new tagged cache instance.
@@ -45,7 +46,7 @@ class TaggedCache {
     this.store = store;
     this.tags = tags;
     this.tagPrefix = 'tags/';
-    this.inflight = new Map();
+    this.debouncer = new Debouncer(new Map(), store);
   }
 
   /**
@@ -250,19 +251,7 @@ class TaggedCache {
    *   The promise for the redis command.
    */
   debounce(command: string, ...args: Array<any>): Promise<*> {
-    const key = [command, args];
-    const debounced: ?Promise<*> = this.inflight.get(key);
-    if (debounced) {
-      return debounced;
-    }
-    const promise = this.store[command](...args).then((result) => {
-      // Remove from in-flight when it resolves and return the results.
-      this.inflight.delete(key);
-      return result;
-    });
-    // Add the promise to the in-flight map.
-    this.inflight.set(key, promise);
-    return promise;
+    return this.debouncer.debounce(command, ...args);
   }
 }
 

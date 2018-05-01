@@ -1,9 +1,10 @@
 // @flow
 
 import type Redis from 'ioredis';
-import type { TagSetInterface } from '../types/common';
+import type { DebouncerInterface, TagSetInterface } from '../types/common';
 
 const { v4: uuid } = require('uuid');
+const Debouncer = require('./Debouncer');
 
 class TagSet implements TagSetInterface {
   /**
@@ -28,11 +29,19 @@ class TagSet implements TagSetInterface {
   namespace: string;
 
   /**
+   * The debouncer.
+   *
+   * @var {DebouncerInterface}
+   */
+  debouncer: DebouncerInterface;
+
+  /**
    * @inheritDoc
    */
   constructor(store: Redis, names: Array<string>) {
     this.store = store;
     this.names = names;
+    this.debouncer = new Debouncer(new Map(), store);
   }
 
   /**
@@ -55,7 +64,7 @@ class TagSet implements TagSetInterface {
   initTag(name: string): Promise<string> {
     const id = uuid().replace(/-/g, '');
     return this.store.setnx(name, id)
-      .then(res => res ? id : this.store.get(name));
+      .then(res => res ? id : this.debouncer.debounce('get', name));
   }
 
   /**
@@ -77,14 +86,15 @@ class TagSet implements TagSetInterface {
   tagIds(): Promise<Array<string>> {
     const names = this.getNames();
     const tagKeys = names.map(name => this.tagKey(name));
-    return Promise.all(tagKeys.map(k => this.store.get(k))).then(tags => {
-      // If there is a tag associated to the name, get it. If not, create it.
-      const fillTags = (tag: string, index: number) => tag
-        ? Promise.resolve(tag)
-        : this.initTag(tagKeys[index]);
-      const promises = tags.map((t, index) => fillTags(t, index));
-      return Promise.all(promises);
-    });
+    return Promise.all(tagKeys.map(k => this.debouncer.debounce('get', k)))
+      .then(tags => {
+        // If there is a tag associated to the name, get it. If not, create it.
+        const fillTags = (tag: string, index: number) => tag
+          ? Promise.resolve(tag)
+          : this.initTag(tagKeys[index]);
+        const promises = tags.map((t, index) => fillTags(t, index));
+        return Promise.all(promises);
+      });
   }
 
   /**
@@ -92,7 +102,7 @@ class TagSet implements TagSetInterface {
    */
   tagId(name: string): Promise<string> {
     const key = this.tagKey(name);
-    return this.store.get(key) || this.initTag(key);
+    return this.debouncer.debounce('get', key) || this.initTag(key);
   }
 
   /**
