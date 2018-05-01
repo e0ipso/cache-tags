@@ -247,9 +247,9 @@ class RedisTaggedCache extends TaggedCache {
       .then(([newCursor, results]) => {
         const output = [...carry, ...results];
         // Stop recursing when the server returns 0 as the new cursor.
-        return !newCursor
-          ? output
-          : this.getAllMembers(setKey, newCursor, output);
+        return newCursor > 0
+          ? this.getAllMembers(setKey, newCursor, output)
+          : output;
       });
   }
 }
