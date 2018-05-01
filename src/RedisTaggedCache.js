@@ -148,7 +148,7 @@ class RedisTaggedCache extends TaggedCache {
    */
   deleteValues(referenceKeys: TagRefs): Promise<void> {
     return Promise.all(
-      referenceKeys.map(referenceKey => this.debounce('smembers', referenceKey))
+      referenceKeys.map(referenceKey => this.getAllMembers(referenceKey))
     )
       .then(batches => _.flatten(batches))
       .then(members => Array.from(new Set(members)))
@@ -186,7 +186,7 @@ class RedisTaggedCache extends TaggedCache {
   fetchTaggedKeysByTag(): Promise<{[string]: TagRefs}> {
     return this.tags.tagIds().then(tagIds => {
       const prms = tagIds
-        .map(tagId => this.debounce('smembers', this.referenceKey(tagId)));
+        .map(tagId => this.getAllMembers(this.referenceKey(tagId)));
       return Promise.all(prms).then(res => _.zipObject(tagIds, res));
     });
   }
@@ -219,6 +219,37 @@ class RedisTaggedCache extends TaggedCache {
         return intersection
           // We need to remove the Redis prefix. This is un-ideal.
           .map(key => key.replace(new RegExp(`^${this.store.options.keyPrefix}`), ''));
+      });
+  }
+
+  /**
+   * Gets all the members of a set in a performant manner.
+   *
+   * This is potentially a bit less consistent than using SMEMBERS, but it is
+   * also faster.
+   *
+   * @param {string} setKey
+   *   The set key.
+   * @param {number} cursor
+   *   The pagination cursor.
+   * @param {string[]} carry
+   *   The accumulated elements in the set. This is for internal tracking.
+   *
+   * @return {Promise<*[]>}
+   *   The promise of all the members of a set.
+   */
+  getAllMembers(
+    setKey: string,
+    cursor: number = 0,
+    carry: Array<string> = []
+  ): Promise<Array<*>> {
+    return this.debounce('sscan', setKey, cursor)
+      .then(([newCursor, results]) => {
+        const output = [...carry, ...results];
+        // Stop recursing when the server returns 0 as the new cursor.
+        return !newCursor
+          ? output
+          : this.getAllMembers(setKey, newCursor, output);
       });
   }
 }
