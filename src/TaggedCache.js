@@ -28,6 +28,13 @@ class TaggedCache {
   tagPrefix: string;
 
   /**
+   * A map of commands in-flight to debounce.
+   *
+   * @var {Map}
+   */
+  inflight: Map<[string, Array<any>], Promise<*>>;
+
+  /**
    * Create a new tagged cache instance.
    *
    * @param {Redis} store
@@ -38,6 +45,7 @@ class TaggedCache {
     this.store = store;
     this.tags = tags;
     this.tagPrefix = 'tags/';
+    this.inflight = new Map();
   }
 
   /**
@@ -95,7 +103,7 @@ class TaggedCache {
    * @return {Promise<Object>}
    */
   get(key: string): Promise<any> {
-    return this.store.get(this.itemKey(key));
+    return this.debounce('get', this.itemKey(key));
   }
 
   /**
@@ -108,7 +116,7 @@ class TaggedCache {
    */
   getMultiple(keys: Array<string>): Promise<{ [string]: any }> {
     const tKeys = keys.map(k => this.itemKey(k));
-    return Promise.all(tKeys.map(tKey => this.store.get(tKey)))
+    return Promise.all(tKeys.map(tKey => this.debounce('get', tKey)))
       .then(values => _.zipObject(tKeys, values));
   }
 
@@ -226,6 +234,35 @@ class TaggedCache {
       args = [...args, 'PX', ttl * 1000];
     }
     return this.store.set(...args);
+  }
+
+  /**
+   * De-bounces a Redis command returning an instance of the in-flight promise.
+   *
+   * Only use with idempotent commands.
+   *
+   * @param {string} command
+   *   The Redis command.
+   * @param {any[]} args
+   *   The parameters accepted by the command.
+   *
+   * @return {Promise<*>}
+   *   The promise for the redis command.
+   */
+  debounce(command: string, ...args: Array<any>): Promise<*> {
+    const key = [command, args];
+    const debounced: ?Promise<*> = this.inflight.get(key);
+    if (debounced) {
+      return debounced;
+    }
+    const promise = this.store[command](...args).then((result) => {
+      // Remove from in-flight when it resolves and return the results.
+      this.inflight.delete(key);
+      return result;
+    });
+    // Add the promise to the in-flight map.
+    this.inflight.set(key, promise);
+    return promise;
   }
 }
 

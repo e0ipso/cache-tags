@@ -148,7 +148,7 @@ class RedisTaggedCache extends TaggedCache {
    */
   deleteValues(referenceKeys: TagRefs): Promise<void> {
     return Promise.all(
-      referenceKeys.map(referenceKey => this.store.smembers(referenceKey))
+      referenceKeys.map(referenceKey => this.debounce('smembers', referenceKey))
     )
       .then(batches => _.flatten(batches))
       .then(members => Array.from(new Set(members)))
@@ -185,7 +185,8 @@ class RedisTaggedCache extends TaggedCache {
    */
   fetchTaggedKeysByTag(): Promise<{[string]: TagRefs}> {
     return this.tags.tagIds().then(tagIds => {
-      const prms = tagIds.map(tagId => this.store.smembers(this.referenceKey(tagId)));
+      const prms = tagIds
+        .map(tagId => this.debounce('smembers', this.referenceKey(tagId)));
       return Promise.all(prms).then(res => _.zipObject(tagIds, res));
     });
   }
