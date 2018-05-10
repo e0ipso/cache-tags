@@ -1,11 +1,5 @@
-<h1 align="center">
-<!--emdaer-p
-- '@emdaer/plugin-value-from-package'
-- value: name
--->
-    </br>
-    <img src="./logo.svg" alt="Cache Tags logo" title="Cache Tags logo" width="100">
-</h1>
+# Cache Tags <img src="./logo.svg" alt="Cache Tags logo" title="Cache Tags logo" width="100" align="right">
+
 <p align="center">
 <!--emdaer-p
   - '@emdaer/plugin-value-from-package'

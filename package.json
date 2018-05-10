@@ -33,7 +33,7 @@
     "@emdaer/plugin-license-reference": "^2.0.0",
     "@emdaer/plugin-shields": "^2.0.0",
     "@emdaer/plugin-value-from-package": "^2.0.0",
-    "@emdaer/transform-prettier": "^2.0.0",
+    "@emdaer/transform-prettier": "^2.4.0",
     "@emdaer/transform-table-of-contents": "^2.0.0",
     "babel-eslint": "^8.2.2",
     "condition-noop": "^1.0.0",
