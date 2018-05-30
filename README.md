@@ -86,6 +86,11 @@ Promise.resolve()
 </a>
 <strong>Mateu Aguiló Bosch</strong>
 <br><br>
+<a title="Software architect with an interest in distributed systems and elegant solutions." href="https://github.com/elliotttf">
+  <img align="left" src="https://avatars0.githubusercontent.com/u/447151?s=24">
+</a>
+<strong>Elliott Foster</strong>
+<br><br>
 </details>
 
 <h2 id="license">License</h2>
