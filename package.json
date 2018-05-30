@@ -4,6 +4,9 @@
   "description": "Adds cache tags for bulk invalidation.",
   "main": "lib/index.js",
   "author": "Mateu Aguiló Bosch <mateu.aguilo.bosch@gmail.com>",
+  "contributors": [
+    "Elliott Foster <elliottf@codebrews.com> (https://codebrews.com)"
+  ],
   "license": "GPL-2.0",
   "scripts": {
     "build": "rimraf lib && flow-remove-types --all src/ --out-dir lib/ && flow-copy-source src lib",
