@@ -4,6 +4,10 @@
   Its template can be found at .emdaer/README.emdaer.md
 -->
 
+<!--
+  emdaerHash:f449cfd6e3c530f4a4eb8c8fa81e69fb
+-->
+
 <h1 id="cache-tags-img-src-logo-svg-alt-cache-tags-logo-title-cache-tags-logo-width-100-align-right-">Cache Tags <img src="./logo.svg" alt="Cache Tags logo" title="Cache Tags logo" width="100" align="right"></h1>
 <p></p><p align="center">
 Adds cache tags for bulk invalidation.
