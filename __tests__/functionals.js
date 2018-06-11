@@ -1,48 +1,63 @@
-const { TaggableCache: Redis } = require('../lib');
+const { TaggableCache: Redis } = require('../src');
 
 const generateTest = (redis, numItems) => () => {
-  const setData = () => Promise.all([
-    ...Array(numItems).fill(0).map((v, i) => i)
-      .map(id => {
-        const taggedClient = redis.tags([`tag_${id % 2}`, `post_${id}`, 'cache-tag']);
-        const args = [`post_${id}`, `Post ${id}!`];
-        // 50% of the time we enter.
-        if (Math.random() > 0.5) {
-          args.push('EX', 20000000);
-        }
-        return taggedClient.set(...args);
-      }),
-    // Add an item that shares some tags, but not all. This is to make sure we
-    // don't delete tags inadvertently.
-    redis.tags(['foo', 'tag_1']).set('lorem', 'ipsum'),
-  ]);
-  const getData = () => Promise.all(Array(numItems).fill(0).map((v, i) => i)
-    .map(
-      id => redis
-        .tags([`tag_${id % 2}`, `post_${id}`])
-        .get(`post_${id}`)
-    ));
+  const setData = () =>
+    Promise.all([
+      ...Array(numItems)
+        .fill(0)
+        .map((v, i) => i)
+        .map(id => {
+          const taggedClient = redis.tags([
+            `tag_${id % 2}`,
+            `post_${id}`,
+            'cache-tag',
+          ]);
+          const args = [`post_${id}`, `Post ${id}!`];
+          // 50% of the time we enter.
+          if (Math.random() > 0.5) {
+            args.push('EX', 20000000);
+          }
+          return taggedClient.set(...args);
+        }),
+      // Add an item that shares some tags, but not all. This is to make sure we
+      // don't delete tags inadvertently.
+      redis.tags(['foo', 'tag_1']).set('lorem', 'ipsum'),
+    ]);
+  const getData = () =>
+    Promise.all(
+      Array(numItems)
+        .fill(0)
+        .map((v, i) => i)
+        .map(id =>
+          redis.tags([`tag_${id % 2}`, `post_${id}`]).get(`post_${id}`)
+        )
+    );
 
   expect.assertions(12);
-  return (new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     redis.on('ready', resolve);
     redis.on('error', reject);
-  }))
+  })
     .then(setData)
     .then(getData)
     .then(res => {
       expect(res).toHaveLength(numItems);
-      const expected = Array(numItems).fill(0).map((v, i) => i)
-        .map(i => `Post ${i}!`).join('|');
+      const expected = Array(numItems)
+        .fill(0)
+        .map((v, i) => i)
+        .map(i => `Post ${i}!`)
+        .join('|');
       expect(res.join('|')).toBe(expected);
     })
-    .then(() => Promise.all([
-      redis.tags(['tag_0']).get('post_0'),
-      redis.get('post_0'),
-      // Generate duplicated gets to trigger the debouncer.
-      redis.tags(['tag_0']).debounce('get', 'post_0'),
-      redis.tags(['tag_0']).debounce('get', 'post_0'),
-    ]))
+    .then(() =>
+      Promise.all([
+        redis.tags(['tag_0']).get('post_0'),
+        redis.get('post_0'),
+        // Generate duplicated gets to trigger the debouncer.
+        redis.tags(['tag_0']).debounce('get', 'post_0'),
+        redis.tags(['tag_0']).debounce('get', 'post_0'),
+      ])
+    )
     .then(res => {
       expect(res).toEqual(['Post 0!', 'Post 0!', 'Post 0!', 'Post 0!']);
     })
@@ -67,10 +82,9 @@ const generateTest = (redis, numItems) => () => {
     .then(res => {
       expect(res).toHaveLength(0);
     })
-    .then(() => Promise.all([
-      redis.tags(['tag_1']).get('post_1'),
-      redis.get('post_1'),
-    ]))
+    .then(() =>
+      Promise.all([redis.tags(['tag_1']).get('post_1'), redis.get('post_1')])
+    )
     .then(res => {
       expect(res).toEqual(['Post 1!', 'Post 1!']);
     })

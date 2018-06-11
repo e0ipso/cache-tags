@@ -34,12 +34,12 @@ class Debouncer implements DebouncerInterface {
       return debounced;
     }
     const promise = this.backend[command](...args)
-      .then((result) => {
+      .then(result => {
         // Remove from in-flight when it resolves and return the results.
         inflight.delete(key);
         return result;
       })
-      .catch((err) => {
+      .catch(err => {
         inflight.delete(key);
         throw err;
       });

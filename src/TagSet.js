@@ -49,13 +49,11 @@ class TagSet implements TagSetInterface {
    */
   reset(): Promise<void> {
     // Generate new IDs for all the names and set them all at the same time.
-    return Promise.all(this.getNames()
-      .map(name => [
-        this.tagKey(name),
-        uuid().replace(/-/g, ''),
-      ])
-      .map(tuple => this.store.set(...tuple)))
-      .then(() => {});
+    return Promise.all(
+      this.getNames()
+        .map(name => [this.tagKey(name), uuid().replace(/-/g, '')])
+        .map(tuple => this.store.set(...tuple))
+    ).then(() => {});
   }
 
   /**
@@ -63,8 +61,9 @@ class TagSet implements TagSetInterface {
    */
   initTag(name: string): Promise<string> {
     const id = uuid().replace(/-/g, '');
-    return this.store.setnx(name, id)
-      .then(res => res ? id : this.debouncer.debounce('get', name));
+    return this.store
+      .setnx(name, id)
+      .then(res => (res ? id : this.debouncer.debounce('get', name)));
   }
 
   /**
@@ -86,15 +85,15 @@ class TagSet implements TagSetInterface {
   tagIds(): Promise<Array<string>> {
     const names = this.getNames();
     const tagKeys = names.map(name => this.tagKey(name));
-    return Promise.all(tagKeys.map(k => this.debouncer.debounce('get', k)))
-      .then(tags => {
-        // If there is a tag associated to the name, get it. If not, create it.
-        const fillTags = (tag: string, index: number) => tag
-          ? Promise.resolve(tag)
-          : this.initTag(tagKeys[index]);
-        const promises = tags.map((t, index) => fillTags(t, index));
-        return Promise.all(promises);
-      });
+    return Promise.all(
+      tagKeys.map(k => this.debouncer.debounce('get', k))
+    ).then(tags => {
+      // If there is a tag associated to the name, get it. If not, create it.
+      const fillTags = (tag: string, index: number) =>
+        tag ? Promise.resolve(tag) : this.initTag(tagKeys[index]);
+      const promises = tags.map((t, index) => fillTags(t, index));
+      return Promise.all(promises);
+    });
   }
 
   /**

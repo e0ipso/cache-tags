@@ -9,20 +9,25 @@
   ],
   "license": "GPL-2.0",
   "scripts": {
-    "build": "rimraf lib && flow-remove-types --all src/ --out-dir lib/ && flow-copy-source src lib",
+    "build": "./node_modules/.bin/babel src -d lib --copy-files --delete-dir-on-start",
     "prepare": "yarn build",
     "test": "NODE_ENV=test jest --coverage",
     "test-ci": "NODE_ENV=test jest --coverage --ci --runInBand",
     "readme": "emdaer --yes && git add *.md .emdaer/.offline",
     "lint": "eslint --ignore-path .gitignore .",
-    "flow": "flow src/",
+    "flow": "flow status src/",
     "precommit": "yarn build && yarn lint && yarn flow && yarn readme",
     "prepush": "yarn lint && yarn flow",
     "commitmsg": "commitlint -e $GIT_PARAMS",
     "start-redis": "redis-server --loglevel verbose",
     "create-cluster": "./util/create-cluster start && ./util/create-cluster create",
     "destroy-cluster": "./util/create-cluster stop && ./util/create-cluster clean",
+    "prettier": "prettier --write './**/*.js' && eslint './**/*.js' --fix",
     "semantic-release": "semantic-release"
+  },
+  "engines" : {
+    "node" : ">=8.11.2",
+    "yarn": ">=1.0.0"
   },
   "dependencies": {
     "bluebird": "^3.5.1",
@@ -31,7 +36,12 @@
     "uuid": "^3.2.1"
   },
   "devDependencies": {
-    "@commitlint/cli": "^6.1.3",
+    "@babel/cli": "^7.0.0-beta.47",
+    "@babel/core": "^7.0.0-beta.47",
+    "@babel/node": "^7.0.0-beta.47",
+    "@babel/preset-env": "^7.0.0-beta.47",
+    "@babel/preset-flow": "^7.0.0-beta.47",
+    "@commitlint/cli": "^6.2.0",
     "@commitlint/config-angular": "^6.1.3",
     "@emdaer/cli": "^3.2.3",
     "@emdaer/plugin-contributors-details-github": "^3.2.3",
@@ -42,46 +52,27 @@
     "@emdaer/plugin-value-from-package": "^3.2.3",
     "@emdaer/transform-prettier": "^3.2.3",
     "@emdaer/transform-table-of-contents": "^3.2.3",
-    "babel-eslint": "^8.2.2",
-    "condition-noop": "^1.0.0",
-    "eslint": "^4.19.0",
-    "eslint-config-airbnb-base": "^12.1.0",
+    "babel-core": "^7.0.0-bridge.0",
+    "babel-eslint": "^8.2.3",
+    "babel-jest": "^22.4.4",
+    "eslint": "^4.19.1",
     "eslint-config-prettier": "^2.9.0",
-    "eslint-plugin-flowtype": "^2.46.1",
-    "eslint-plugin-import": "^2.9.0",
-    "eslint-plugin-jest": "^21.15.0",
-    "flow-bin": "^0.68.0",
-    "flow-copy-source": "^2.0.0",
-    "flow-remove-types": "^1.2.3",
+    "eslint-config-problems": "^0.1.1",
+    "eslint-plugin-babel": "^5.1.0",
+    "eslint-plugin-better": "^0.1.5",
+    "eslint-plugin-flowtype": "^2.47.1",
+    "eslint-plugin-jest": "^21.15.2",
+    "eslint-plugin-prettier": "^2.6.0",
+    "flow-bin": "^0.71.0",
     "husky": "^0.14.3",
     "jest": "^22.4.2",
-    "jest-environment-node-debug": "^2.0.0",
-    "jest-flow-transform": "^1.0.1",
-    "prettier": "^1.11.1",
-    "rimraf": "^2.6.2",
+    "lint-staged": "^7.2.0",
+    "prettier": "^1.12.1",
     "semantic-release": "^15.4.1",
     "semantic-release-conventional-commits": "^2.0.0"
   },
   "release": {
     "analyzeCommits": "semantic-release-conventional-commits"
-  },
-  "jest": {
-    "coverageDirectory": "__coverage__",
-    "coverageThreshold": {
-      "global": {
-        "branches": 35,
-        "functions": 66,
-        "lines": 70,
-        "statements": 70
-      }
-    },
-    "testEnvironment": "node",
-    "testMatch": [
-      "<rootDir>/__tests__/**/*.js"
-    ],
-    "transform": {
-      "^.+\\.js(?:\\.flow)?$": "jest-flow-transform"
-    }
   },
   "repository": {
     "type": "git",
@@ -89,11 +80,6 @@
   },
   "bugs": {
     "url": "https://github.com/e0ipso/cache-tags/issues"
-  },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-angular"
-    ]
   },
   "homepage": "https://github.com/e0ipso/cache-tags#readme",
   "private": false,
