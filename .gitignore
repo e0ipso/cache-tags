@@ -8,3 +8,7 @@ yarn-error.log
 
 # Jest data
 __coverage__
+
+# Local development
+.vscode
+.idea

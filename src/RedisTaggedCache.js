@@ -18,12 +18,20 @@ class RedisTaggedCache extends TaggedCache {
    * @param {Array<*>} additionalArgs
    * @return {void}
    */
-  set(key: string, value: any, ...additionalArgs: [string, number]): Promise<void> {
-    return this.tags.getNamespace()
-      .then(namespace => Promise.all([
-        this.pushKeys(namespace, key),
-        super.set(key, value, ...additionalArgs),
-      ])).then(() => {});
+  set(
+    key: string,
+    value: any,
+    ...additionalArgs: [string, number]
+  ): Promise<void> {
+    return this.tags
+      .getNamespace()
+      .then(namespace =>
+        Promise.all([
+          this.pushKeys(namespace, key),
+          super.set(key, value, ...additionalArgs),
+        ])
+      )
+      .then(() => {});
   }
 
   /**
@@ -72,19 +80,24 @@ class RedisTaggedCache extends TaggedCache {
    *   Resolves when done.
    */
   deleteWithTags(): Promise<void> {
-    return this.fetchTaggedKeysByTag().then(res => Promise.all([
-      Promise.resolve(res),
-      this.fetchTaggedKeys(res),
-    ]))
+    return this.fetchTaggedKeysByTag()
+      .then(res =>
+        Promise.all([Promise.resolve(res), this.fetchTaggedKeys(res)])
+      )
       .then(([res, keysToDelete]) => {
         const tagIds = Object.keys(res);
-        const pairs = _.flatten(tagIds.map(tagId => {
-          const tagRef = this.referenceKey(tagId);
-          return res[tagId].map(key => [tagRef, key]);
-        }));
-        const deletablePairs = pairs.filter(pair => keysToDelete.indexOf(pair[1]) !== -1);
-        const tagPromises = deletablePairs
-          .map(([setKey, setMember]) => this.store.srem(setKey, setMember));
+        const pairs = _.flatten(
+          tagIds.map(tagId => {
+            const tagRef = this.referenceKey(tagId);
+            return res[tagId].map(key => [tagRef, key]);
+          })
+        );
+        const deletablePairs = pairs.filter(
+          pair => keysToDelete.indexOf(pair[1]) !== -1
+        );
+        const tagPromises = deletablePairs.map(([setKey, setMember]) =>
+          this.store.srem(setKey, setMember)
+        );
         // Delete the cache entries themselves.
         const dataPromise = this.deleteMultiple(keysToDelete);
         return Promise.all([...tagPromises, dataPromise]);
@@ -114,7 +127,8 @@ class RedisTaggedCache extends TaggedCache {
     const fullKey = this.store.options.keyPrefix
       ? `${this.store.options.keyPrefix}${key}`
       : key;
-    const referenceKeys = namespace.split('|')
+    const referenceKeys = namespace
+      .split('|')
       .map(segment => this.referenceKey(segment));
     return Promise.all(
       referenceKeys.map(referenceKey => this.store.sadd(referenceKey, fullKey))
@@ -128,15 +142,17 @@ class RedisTaggedCache extends TaggedCache {
    * @return {void}
    */
   deleteKeys(): Promise<void> {
-    return this.tags.getNamespace()
+    return this.tags
+      .getNamespace()
       .then(namespace => {
-        const referenceKeys = namespace.split('|')
+        const referenceKeys = namespace
+          .split('|')
           .map(segment => this.referenceKey(segment));
         return this.deleteValues(referenceKeys).then(() => referenceKeys);
       })
-      .then((referenceKeys) => Promise.all(
-        referenceKeys.map(rk => this.store.del(rk))
-      ))
+      .then(referenceKeys =>
+        Promise.all(referenceKeys.map(rk => this.store.del(rk)))
+      )
       .then(() => {});
   }
 
@@ -158,7 +174,7 @@ class RedisTaggedCache extends TaggedCache {
         }
         return promiseMap(
           _.chunk(members, 1000),
-          (chunk) => Promise.all(chunk.map(item => this.store.del(item))),
+          chunk => Promise.all(chunk.map(item => this.store.del(item))),
           { concurrency: 100 }
         );
       })
@@ -183,10 +199,11 @@ class RedisTaggedCache extends TaggedCache {
    *
    * @private
    */
-  fetchTaggedKeysByTag(): Promise<{[string]: TagRefs}> {
+  fetchTaggedKeysByTag(): Promise<{ [string]: TagRefs }> {
     return this.tags.tagIds().then(tagIds => {
-      const prms = tagIds
-        .map(tagId => this.getAllMembers(this.referenceKey(tagId)));
+      const prms = tagIds.map(tagId =>
+        this.getAllMembers(this.referenceKey(tagId))
+      );
       return Promise.all(prms).then(res => _.zipObject(tagIds, res));
     });
   }
@@ -202,23 +219,27 @@ class RedisTaggedCache extends TaggedCache {
    *
    * @protected
    */
-  fetchTaggedKeys(taggedKeysByTag: ?{[string]: TagRefs}): Promise<Array<string>> {
+  fetchTaggedKeys(
+    taggedKeysByTag: ?{ [string]: TagRefs }
+  ): Promise<Array<string>> {
     const promise = taggedKeysByTag
       ? Promise.resolve(taggedKeysByTag)
       : this.fetchTaggedKeysByTag();
     return promise
-      .then((res): Array<TagRefs> => Object.keys(res)
-        .map(k => res[k]))
+      .then((res): Array<TagRefs> => Object.keys(res).map(k => res[k]))
       .then((res: Array<TagRefs>) => {
         if (!res.length) {
           return [];
         }
-        const intersection = res.length > 1
-          ? _.intersection(..._.uniq(res))
-          : res[0];
-        return intersection
-          // We need to remove the Redis prefix. This is un-ideal.
-          .map(key => key.replace(new RegExp(`^${this.store.options.keyPrefix}`), ''));
+        const intersection =
+          res.length > 1 ? _.intersection(..._.uniq(res)) : res[0];
+        return (
+          intersection
+            // We need to remove the Redis prefix. This is un-ideal.
+            .map(key =>
+              key.replace(new RegExp(`^${this.store.options.keyPrefix}`), '')
+            )
+        );
       });
   }
 
@@ -243,14 +264,15 @@ class RedisTaggedCache extends TaggedCache {
     cursor: number = 0,
     carry: Array<string> = []
   ): Promise<Array<*>> {
-    return this.debounce('sscan', setKey, cursor)
-      .then(([newCursor, results]) => {
+    return this.debounce('sscan', setKey, cursor).then(
+      ([newCursor, results]) => {
         const output = [...carry, ...results];
         // Stop recursing when the server returns 0 as the new cursor.
         return newCursor > 0
           ? this.getAllMembers(setKey, newCursor, output)
           : output;
-      });
+      }
+    );
   }
 }
 

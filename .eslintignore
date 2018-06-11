@@ -1,0 +1,9 @@
+# node_modules ignored by default
+
+# Ignore generated files
+__coverage__
+scratch
+lib
+flow-typed
+!.babelrc.js
+!.eslintrc.js

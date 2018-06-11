@@ -117,8 +117,9 @@ class TaggedCache {
    */
   getMultiple(keys: Array<string>): Promise<{ [string]: any }> {
     const tKeys = keys.map(k => this.itemKey(k));
-    return Promise.all(tKeys.map(tKey => this.debounce('get', tKey)))
-      .then(values => _.zipObject(tKeys, values));
+    return Promise.all(tKeys.map(tKey => this.debounce('get', tKey))).then(
+      values => _.zipObject(tKeys, values)
+    );
   }
 
   /**
@@ -131,7 +132,11 @@ class TaggedCache {
    * @param {Array<*>} additionalArgs
    * @return {void}
    */
-  set(key: string, value: any, ...additionalArgs: [string, number]): Promise<void> {
+  set(
+    key: string,
+    value: any,
+    ...additionalArgs: [string, number]
+  ): Promise<void> {
     const tKey = this.itemKey(key);
     let args = [tKey, value];
     if (additionalArgs.length) {
@@ -175,18 +180,22 @@ class TaggedCache {
    * @param {int} ttl
    * @return {void}
    */
-  setMultiple(values: {[string]: any}, ttl: ?number): Promise<void> {
-    return Promise.all(Object.keys(values).map(
-      key => [this.itemKey(key), values[key]]
-    ))
-      .then(tuples => Promise.all(tuples.map(([key, value]) => {
-        const args = [key, value];
-        if (ttl) {
-          args.push('PX');
-          args.push(ttl * 1000);
-        }
-        return this.store.set(...args);
-      })))
+  setMultiple(values: { [string]: any }, ttl: ?number): Promise<void> {
+    return Promise.all(
+      Object.keys(values).map(key => [this.itemKey(key), values[key]])
+    )
+      .then(tuples =>
+        Promise.all(
+          tuples.map(([key, value]) => {
+            const args = [key, value];
+            if (ttl) {
+              args.push('PX');
+              args.push(ttl * 1000);
+            }
+            return this.store.set(...args);
+          })
+        )
+      )
       .then(() => {});
   }
 
