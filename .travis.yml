@@ -13,6 +13,7 @@ cache:
 before_install:
   - git fetch origin --tags
   - yarn global add greenkeeper-lockfile@1
+  - yarn add --no-lockfile coveralls
   - gem install redis
 before_script:
   - greenkeeper-lockfile-update
