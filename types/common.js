@@ -34,14 +34,6 @@ export interface TagSetInterface {
   getNamespace(): Promise<string>;
 
   /**
-   * Get the unique tag identifier for a given tag.
-   *
-   * @param {string} name
-   * @return {Promise<string>}
-   */
-  tagId(name: string): Promise<string>;
-
-  /**
    * Get an array of tag identifiers for all of the tags in the set.
    *
    * @return {Promise<string[]>}

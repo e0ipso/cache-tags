@@ -61,9 +61,14 @@ class TagSet implements TagSetInterface {
    */
   initTag(name: string): Promise<string> {
     const id = uuid().replace(/-/g, '');
-    return this.store
-      .setnx(name, id)
-      .then(res => (res ? id : this.debouncer.debounce('get', name)));
+    return this.store.setnx(name, id).then(res => {
+      // setnx return 1 if the key did not exist and was able to set it, 0 if
+      // it could not set the key.
+      if (res) {
+        return id;
+      }
+      return this.debouncer.debounce('get', name);
+    });
   }
 
   /**
@@ -94,14 +99,6 @@ class TagSet implements TagSetInterface {
       const promises = tags.map((t, index) => fillTags(t, index));
       return Promise.all(promises);
     });
-  }
-
-  /**
-   * @inheritDoc
-   */
-  tagId(name: string): Promise<string> {
-    const key = this.tagKey(name);
-    return this.debouncer.debounce('get', key) || this.initTag(key);
   }
 
   /**

@@ -5,7 +5,7 @@ module.exports = {
   extends: ['problems', 'plugin:prettier/recommended'],
   overrides: [
     {
-      files: ['**/*.test.js'],
+      files: ['**/*.test.js', '__tests__/**/*.js'],
       env: { jest: true },
     },
   ],
