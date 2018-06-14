@@ -5,7 +5,7 @@
 -->
 
 <!--
-  emdaerHash:f449cfd6e3c530f4a4eb8c8fa81e69fb
+  emdaerHash:1921e3d6113e76215696988c6c5716af
 -->
 
 <h1 id="cache-tags-img-src-logo-svg-alt-cache-tags-logo-title-cache-tags-logo-width-100-align-right-">Cache Tags <img src="./logo.svg" alt="Cache Tags logo" title="Cache Tags logo" width="100" align="right"></h1>
@@ -37,6 +37,10 @@ list these cache entries that relate to each other you can use tags. You will
 need to add the tags to the cache entries to be able to retrieve them later.</p>
 <p>This module only supports Redis as the cache back-end at the moment. It is
 tested against a single node and a cluster of 3 masters and 3 replicas.</p>
+<p>Concept inspired by <a href="https://www.drupal.org/">Drupal</a> 8’s
+<a href="https://www.drupal.org/docs/8/api/cache-api/cache-tags">cache tags</a>. API and
+implementation inspired by
+<a href="https://laravel.com/docs/5.6/cache#cache-tags">Laravel’s Cache Tags</a>.</p>
 <h2 id="usage">Usage</h2>
 <p>If you want to see more usage examples, check the
 <a href="./__tests__/functional.js">functional tests</a>.</p>

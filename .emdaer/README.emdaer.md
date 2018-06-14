@@ -41,6 +41,11 @@ need to add the tags to the cache entries to be able to retrieve them later.
 This module only supports Redis as the cache back-end at the moment. It is
 tested against a single node and a cluster of 3 masters and 3 replicas. 
 
+Concept inspired by [Drupal](https://www.drupal.org/) 8's
+[cache tags](https://www.drupal.org/docs/8/api/cache-api/cache-tags). API and
+implementation inspired by
+[Laravel's Cache Tags](https://laravel.com/docs/5.6/cache#cache-tags).
+
 ## Usage
 If you want to see more usage examples, check the
 [functional tests](./__tests__/functional.js).
