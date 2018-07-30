@@ -25,12 +25,12 @@
     "email": null,
     "hireable": null,
     "bio": "Engineer and programmer focused on online applications.",
-    "public_repos": 66,
+    "public_repos": 67,
     "public_gists": 35,
-    "followers": 83,
-    "following": 44,
+    "followers": 88,
+    "following": 45,
     "created_at": "2011-10-20T14:27:43Z",
-    "updated_at": "2018-05-31T14:20:57Z"
+    "updated_at": "2018-06-22T10:20:03Z"
   },
   {
     "login": "elliotttf",
@@ -58,11 +58,11 @@
     "email": null,
     "hireable": null,
     "bio": "Software architect with an interest in distributed systems and elegant solutions.",
-    "public_repos": 76,
+    "public_repos": 78,
     "public_gists": 38,
     "followers": 50,
     "following": 12,
     "created_at": "2010-10-20T16:40:28Z",
-    "updated_at": "2018-05-29T13:35:24Z"
+    "updated_at": "2018-07-25T21:18:08Z"
   }
 ]

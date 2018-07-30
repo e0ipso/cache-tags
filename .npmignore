@@ -2,7 +2,6 @@
 __coverage__
 scratch
 src
-util
 .babelrc
 .emdaer
 .eslintrc.js
