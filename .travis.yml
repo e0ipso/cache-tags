@@ -42,4 +42,4 @@ jobs:
       stage: deploy
       if: branch = master
       script:
-        - yarn travis-deploy-once "yarn semantic-release"
+        - yarn semantic-release
