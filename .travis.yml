@@ -10,25 +10,36 @@ cache:
     - node_modules
     - .tmp
     - ~/.npm
-before_install:
-  - git fetch origin --tags
-  - yarn global add greenkeeper-lockfile@1
-  - yarn add --no-lockfile coveralls
-  - gem install redis
-before_script:
-  - greenkeeper-lockfile-update
-  - yarn create-cluster
-script:
-  - yarn test
-after_script:
-  - greenkeeper-lockfile-upload
-  - yarn destroy-cluster
-after_success:
-  # Report coverage to coveralls.io
-  - cat ./__coverage__/lcov.info | ./node_modules/coveralls/bin/coveralls.js
-  - rm -fr ./__coverage__
-  - yarn semantic-release
 
-branches:
-  except:
-    - /^v\d+\.\d+\.\d+$/
+stages:
+  - name: test
+    # require the event type to not be a semantic release tag.
+    if: NOT tag =~ ^v\d+\.\d+\.\d+$
+
+jobs:
+  include:
+    -
+      stage: test
+      before_install:
+        - git fetch --tags
+        - yarn global add greenkeeper-lockfile@1
+        - yarn add --no-lockfile coveralls
+        - gem install redis
+      before_script:
+        - greenkeeper-lockfile-update
+        - yarn create-cluster
+      script:
+        - yarn lint
+        - yarn test-ci
+        - yarn add --no-lockfile coveralls
+        # Report coverage to coveralls.io
+        - cat ./__coverage__/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+        - rm -fr ./__coverage__
+      after_script:
+        - greenkeeper-lockfile-upload
+
+    -
+      stage: deploy
+      if: branch = master
+      script:
+        - yarn travis-deploy-once "yarn semantic-release"
