@@ -33,7 +33,7 @@ const generateTest = (redis, numItems) => () => {
         )
     );
 
-  expect.assertions(12);
+  expect.assertions(14);
   return new Promise((resolve, reject) => {
     redis.on('ready', resolve);
     redis.on('error', reject);
@@ -101,6 +101,32 @@ const generateTest = (redis, numItems) => () => {
     .then(res => {
       // There is the item tagged with 'tag_1' and 'foo'.
       expect(res).toEqual(['ipsum']);
+    })
+    .then(() => {
+      const rt = redis.tags(['tag_1']);
+      // Set very high TTLs on all items.
+      return Promise.resolve()
+        .then(() => rt.bulk((k, rt) => rt.store.expire(k, 999999999999)))
+        .then(() => rt.bulk((k, rt) => rt.store.ttl(k)));
+    })
+    .then(res => {
+      const allPositive: (Array<number>) => boolean = numbers =>
+        numbers.reduce((carry, ttl) => carry && ttl > 0, true);
+      // Make sure the TTLs are positive.
+      expect(allPositive(res)).toBe(true);
+    })
+    .then(() => {
+      const rt = redis.tags(['tag_1']);
+      // Invalidate all the entries of the tag and then check the TTLs.
+      return Promise.resolve()
+        .then(() => rt.invalidateWithTags())
+        .then(() => rt.bulk((k, rt) => rt.store.ttl(k)));
+    })
+    .then(res => {
+      const allNegative: (Array<number>) => boolean = numbers =>
+        numbers.reduce((carry, ttl) => carry && ttl <= 0, true);
+      // Make sure the TTLs are negative.
+      expect(allNegative(res)).toBe(true);
     });
 };
 
