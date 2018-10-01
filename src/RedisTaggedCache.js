@@ -6,6 +6,7 @@ const { map: promiseMap } = require('bluebird');
 const TaggedCache = require('./TaggedCache');
 
 type TagRefs = Array<string>;
+type Operation<T = void> = (string, TaggedCache) => Promise<T>;
 
 class RedisTaggedCache extends TaggedCache {
   /**
@@ -102,6 +103,39 @@ class RedisTaggedCache extends TaggedCache {
         const dataPromise = this.deleteMultiple(keysToDelete);
         return Promise.all([...tagPromises, dataPromise]);
       });
+  }
+
+  /**
+   * Bulk operation on tagged entries.
+   *
+   * @param {Operation} operation
+   *   The operation to perform on each individual item.
+   * @param {number} pageSize
+   *   The number of operations to execute at once. Empty to execute all.
+   *
+   * @return {Promise<[any]>}
+   *   Resolves the result of the individual operations.
+   */
+  bulk<T>(
+    operation: Operation<T>,
+    pageSize: number = Infinity
+  ): Promise<Array<T>> {
+    return this.fetchTaggedKeysByTag()
+      .then(this.fetchTaggedKeys.bind(this))
+      .then(keys =>
+        promiseMap(keys, key => operation(key, this), { concurrency: pageSize })
+      );
+  }
+
+  /**
+   * Sets all the tagged entries to expire so they can be evicted by Redis.
+   *
+   * @return {Pr}
+   */
+  invalidateWithTags(): Promise<Array<void>> {
+    const invalidate: Operation<void> = (key, tc) =>
+      tc.store.expire(key, 0).then(() => {});
+    return this.bulk(invalidate);
   }
 
   /**
