@@ -11,6 +11,14 @@ const inflight: InflightStore = new Map();
 
 class Debouncer implements DebouncerInterface {
   /**
+   * Pointer to an inflight singleton, which is
+   * used to track all in-flight commands.
+   *
+   * @var {InflightStore}
+   */
+  inflight: InflightStore;
+
+  /**
    * The store that resolves the commands.
    *
    * @var {Object}
@@ -22,6 +30,7 @@ class Debouncer implements DebouncerInterface {
    */
   constructor(backend: Object): void {
     this.backend = backend;
+    this.inflight = inflight;
   }
 
   /**
@@ -29,22 +38,22 @@ class Debouncer implements DebouncerInterface {
    */
   debounce(command: string, ...args: Array<any>): Promise<*> {
     const key = `${command}::${args.map(a => JSON.stringify(a)).join(':')}`;
-    const debounced: ?Promise<*> = inflight.get(key);
+    const debounced: ?Promise<*> = this.inflight.get(key);
     if (debounced) {
       return debounced;
     }
     const promise = this.backend[command](...args)
       .then(result => {
         // Remove from in-flight when it resolves and return the results.
-        inflight.delete(key);
+        this.inflight.delete(key);
         return result;
       })
       .catch(err => {
-        inflight.delete(key);
+        this.inflight.delete(key);
         throw err;
       });
     // Add the promise to the in-flight map.
-    inflight.set(key, promise);
+    this.inflight.set(key, promise);
     return promise;
   }
 }
