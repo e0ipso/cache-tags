@@ -11,8 +11,8 @@ const inflight: InflightStore = new Map();
 
 class Debouncer implements DebouncerInterface {
   /**
-   * Pointer to an inflight singleton, which is
-   * used to track all in-flight commands.
+   * Pointer to the 'inflight' singleton, which is
+   * a map of all in-flight commands.
    *
    * @var {InflightStore}
    */
