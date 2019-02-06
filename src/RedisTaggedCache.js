@@ -114,9 +114,9 @@ class RedisTaggedCache extends TaggedCache {
    *
    * {@link https://redis.io/commands/scan}
    */
-  async batchDeleteWithTags() {
+  async batchDeleteWithTags(): Promise<Array<() => void>> {
     const tagIds = await this.tags.tagIds();
-    await Promise.all(
+    return Promise.all(
       _.map(tagIds, tagId =>
         this.trampoline(
           this.batchDeleteTagMembers.bind(this, this.referenceKey(tagId))
