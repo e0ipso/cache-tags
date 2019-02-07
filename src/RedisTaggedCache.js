@@ -12,17 +12,17 @@ type MemberPage = { members: Array<string>, cursor: number };
 class RedisTaggedCache extends TaggedCache {
   /**
    * RegExp pattern that can be used to find and replace prefixes in tag keys.
-   * 
-   * @var {RegExp} 
+   *
+   * @var {RegExp}
    */
-   keyPrefixPattern: RegExp;
+  keyPrefixPattern: RegExp;
 
-   /**
-    * {@inheritdoc}
-    */
+  /**
+   * {@inheritdoc}
+   */
   constructor(...args: any) {
     super(...args);
-    this.keyPrefixPattern = new RegExp(`^${this.store.options.keyPrefix}`); 
+    this.keyPrefixPattern = new RegExp(`^${this.store.options.keyPrefix}`);
   }
 
   /**
