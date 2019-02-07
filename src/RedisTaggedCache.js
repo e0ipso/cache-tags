@@ -369,9 +369,7 @@ class RedisTaggedCache extends TaggedCache {
         return (
           intersection
             // We need to remove the Redis prefix. This is un-ideal.
-            .map(key =>
-              key.replace(new RegExp(`^${this.store.options.keyPrefix}`), '')
-            )
+            .map(key => key.replace(this.keyPrefixPattern, ''))
         );
       });
   }
