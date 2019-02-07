@@ -11,6 +11,21 @@ type MemberPage = { members: Array<string>, cursor: number };
 
 class RedisTaggedCache extends TaggedCache {
   /**
+   * RegExp pattern that can be used to find and replace prefixes in tag keys.
+   * 
+   * @var {RegExp} 
+   */
+   keyPrefixPattern: RegExp;
+
+   /**
+    * {@inheritdoc}
+    */
+  constructor(...args: any) {
+    super(...args);
+    this.keyPrefixPattern = new RegExp(`^${this.store.options.keyPrefix}`); 
+  }
+
+  /**
    * Store an item in the cache.
    *
    * Takes the same arguments as ioredis set calls.
@@ -156,7 +171,7 @@ class RedisTaggedCache extends TaggedCache {
 
     // Process given keys.
     const keysToDelete = _.map(members, key =>
-      key.replace(new RegExp(`^${this.store.options.keyPrefix}`), '')
+      key.replace(this.keyPrefixPattern, '')
     );
 
     await Promise.all([
