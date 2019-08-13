@@ -23,7 +23,6 @@ jobs:
       before_install:
         - git fetch --tags
         - yarn global add greenkeeper-lockfile@1
-        - yarn add --no-lockfile coveralls
         - gem install redis
       before_script:
         - greenkeeper-lockfile-update
@@ -32,9 +31,6 @@ jobs:
         - yarn lint
         - yarn test-ci
         - yarn add --no-lockfile coveralls
-        # Report coverage to coveralls.io
-        - cat ./__coverage__/lcov.info | ./node_modules/coveralls/bin/coveralls.js
-        - rm -fr ./__coverage__
       after_script:
         - greenkeeper-lockfile-upload
 
