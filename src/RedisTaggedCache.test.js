@@ -147,4 +147,20 @@ describe('RedisTaggedCache', () => {
     expect(sut.store.srem).toHaveBeenCalledTimes(4);
     expect(sut.deleteMultiple).toHaveBeenCalledWith(['tag-id-1', 'tag-id-2']);
   });
+
+  describe('pushKeys with ttl', () => {
+    test('It can set a ttl in seconds', async () => {
+      expect.assertions(1);
+      sut.store.expire = jest.fn().mockResolvedValue();
+      await sut.pushKeys('test-n', 'test', 'EX', 1);
+      expect(sut.store.expire).toHaveBeenCalledWith('tags/test-n', 1);
+    });
+
+    test('It can set a ttl in milliseconds', async () => {
+      expect.assertions(1);
+      sut.store.pexpire = jest.fn().mockResolvedValue();
+      await sut.pushKeys('test-n', 'test', 'PX', 1);
+      expect(sut.store.pexpire).toHaveBeenCalledWith('tags/test-n', 1);
+    });
+  });
 });

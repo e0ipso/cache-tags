@@ -1,5 +1,7 @@
 // @flow
 
+import type { redisTimeUnit } from '../types/common';
+
 const _ = require('lodash');
 const { map: promiseMap } = require('bluebird');
 
@@ -38,13 +40,13 @@ class RedisTaggedCache extends TaggedCache {
   set(
     key: string,
     value: any,
-    ...additionalArgs: [string, number]
+    ...additionalArgs: [redisTimeUnit, number]
   ): Promise<void> {
     return this.tags
-      .getNamespace()
+      .getNamespace(...additionalArgs)
       .then(namespace =>
         Promise.all([
-          this.pushKeys(namespace, key),
+          this.pushKeys(namespace, key, ...additionalArgs),
           super.set(key, value, ...additionalArgs),
         ])
       )
@@ -256,7 +258,12 @@ class RedisTaggedCache extends TaggedCache {
    * @param {string} reference
    * @return {Promise<void>}
    */
-  pushKeys(namespace: string, key: string): Promise<void> {
+  pushKeys(
+    namespace: string,
+    key: string,
+    timeUnit: ?redisTimeUnit,
+    ttl: ?number
+  ): Promise<void> {
     const fullKey = this.store.options.keyPrefix
       ? `${this.store.options.keyPrefix}${key}`
       : key;
@@ -264,7 +271,16 @@ class RedisTaggedCache extends TaggedCache {
       .split('|')
       .map(segment => this.referenceKey(segment));
     return Promise.all(
-      referenceKeys.map(referenceKey => this.store.sadd(referenceKey, fullKey))
+      referenceKeys.map(async referenceKey => {
+        await this.store.sadd(referenceKey, fullKey);
+        if (timeUnit && ttl) {
+          if (timeUnit === 'EX') {
+            await this.store.expire(referenceKey, ttl);
+          } else {
+            await this.store.pexpire(referenceKey, ttl);
+          }
+        }
+      })
     ).then(() => {});
   }
 

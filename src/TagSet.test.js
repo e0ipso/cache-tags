@@ -40,7 +40,11 @@ describe('TagSet', () => {
     return sut.tagIds().then(() => {
       expect(sut.debouncer.debounce).toHaveBeenCalledWith('get', 'tag:lo:key');
       expect(sut.debouncer.debounce).toHaveBeenCalledWith('get', 'tag:rem:key');
-      expect(sut.initTag).toHaveBeenCalledWith('tag:rem:key');
+      expect(sut.initTag).toHaveBeenCalledWith(
+        'tag:rem:key',
+        undefined,
+        undefined
+      );
     });
   });
 
@@ -60,5 +64,23 @@ describe('TagSet', () => {
       expect(id).not.toBeUndefined();
       expect(sut.debouncer.debounce).toHaveBeenCalledWith('get', 'whatever');
     });
+  });
+
+  test('it can expire with seconds', async () => {
+    expect.assertions(1);
+    store.get = jest.fn().mockResolvedValue();
+    store.setnx = jest.fn().mockResolvedValue(0);
+    store.expire = jest.fn().mockResolvedValue();
+    await sut.initTag('whatever', 'EX', 1);
+    expect(store.expire).toHaveBeenCalledWith('whatever', 1);
+  });
+
+  test('it can expire with milliseconds', async () => {
+    expect.assertions(1);
+    store.get = jest.fn().mockResolvedValue();
+    store.setnx = jest.fn().mockResolvedValue(0);
+    store.pexpire = jest.fn().mockResolvedValue();
+    await sut.initTag('whatever', 'PX', 1);
+    expect(store.pexpire).toHaveBeenCalledWith('whatever', 1);
   });
 });
