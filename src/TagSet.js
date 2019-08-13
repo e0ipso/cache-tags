@@ -1,7 +1,11 @@
 // @flow
 
 import type Redis from 'ioredis';
-import type { DebouncerInterface, TagSetInterface } from '../types/common';
+import type {
+  DebouncerInterface,
+  TagSetInterface,
+  redisTimeUnit,
+} from '../types/common';
 
 const { v4: uuid } = require('uuid');
 const Debouncer = require('./Debouncer');
@@ -59,26 +63,40 @@ class TagSet implements TagSetInterface {
   /**
    * @inheritDoc
    */
-  initTag(name: string): Promise<string> {
+  async initTag(
+    name: string,
+    timeUnit: ?redisTimeUnit,
+    ttl: ?number
+  ): Promise<string> {
     const id = uuid().replace(/-/g, '');
-    return this.store.setnx(name, id).then(res => {
-      // setnx return 1 if the key did not exist and was able to set it, 0 if
-      // it could not set the key.
-      if (res) {
-        return id;
+    const res = await this.store.setnx(name, id);
+
+    // If ttl is set, reset the expire for the tag regardless whether or not it
+    // already exists.
+    if (timeUnit && ttl) {
+      if (timeUnit === 'EX') {
+        await this.store.expire(name, ttl);
+      } else {
+        await this.store.pexpire(name, ttl);
       }
-      return this.debouncer.debounce('get', name);
-    });
+    }
+
+    // setnx returns 1 if the key did not exist and was able to set it, 0 if
+    // it could not set the key.
+    if (res) {
+      return id;
+    }
+    return this.debouncer.debounce('get', name);
   }
 
   /**
    * @inheritDoc
    */
-  getNamespace(): Promise<string> {
+  getNamespace(timeUnit: ?redisTimeUnit, ttl: ?number): Promise<string> {
     if (this.namespace) {
       return Promise.resolve(this.namespace);
     }
-    return this.tagIds().then(ids => {
+    return this.tagIds(timeUnit, ttl).then(ids => {
       this.namespace = ids.join('|');
       return this.namespace;
     });
@@ -87,7 +105,7 @@ class TagSet implements TagSetInterface {
   /**
    * @inheritDoc
    */
-  tagIds(): Promise<Array<string>> {
+  tagIds(timeUnit: ?redisTimeUnit, ttl: ?number): Promise<Array<string>> {
     const names = this.getNames();
     const tagKeys = names.map(name => this.tagKey(name));
     return Promise.all(
@@ -95,7 +113,9 @@ class TagSet implements TagSetInterface {
     ).then(tags => {
       // If there is a tag associated to the name, get it. If not, create it.
       const fillTags = (tag: string, index: number) =>
-        tag ? Promise.resolve(tag) : this.initTag(tagKeys[index]);
+        tag
+          ? Promise.resolve(tag)
+          : this.initTag(tagKeys[index], timeUnit, ttl);
       const promises = tags.map((t, index) => fillTags(t, index));
       return Promise.all(promises);
     });

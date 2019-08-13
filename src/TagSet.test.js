@@ -40,7 +40,11 @@ describe('TagSet', () => {
     return sut.tagIds().then(() => {
       expect(sut.debouncer.debounce).toHaveBeenCalledWith('get', 'tag:lo:key');
       expect(sut.debouncer.debounce).toHaveBeenCalledWith('get', 'tag:rem:key');
-      expect(sut.initTag).toHaveBeenCalledWith('tag:rem:key');
+      expect(sut.initTag).toHaveBeenCalledWith(
+        'tag:rem:key',
+        undefined,
+        undefined
+      );
     });
   });
 
