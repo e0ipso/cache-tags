@@ -1,0 +1,66 @@
+version: 2.1
+jobs:
+  test:
+    docker:
+      - image: circleci/node:erbium
+    steps:
+      - checkout
+      - add_ssh_keys
+      - run:
+          name: Install & Lint
+          command: |
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+            yarn
+            yarn lint
+      - run:
+          name: Install redis 5.0.3 and ruby
+          command: |
+            sudo /bin/bash -c "echo deb http://deb.debian.org/debian stretch-backports main >> /etc/apt/sources.list"
+            sudo apt-get update
+            sudo apt-get -t stretch-backports install redis-server
+            sudo apt-get -t stretch-backports install ruby
+            sudo gem install redis
+      - run:
+          name: Create and start redis cluster
+          command: yarn create-cluster
+      - run:
+          name: Start standalone redis node.
+          command: redis-server
+          background: true
+      - run:
+          name: Run tests
+          command: yarn test-ci
+      - save_cache:
+            key: cache-{{ .Revision }}
+            paths:
+              - ~/.npm
+  release:
+    docker:
+      - image: circleci/node:erbium
+    steps:
+      - checkout
+      - add_ssh_keys
+      - restore_cache:
+          key: cache-{{ .Revision }}
+      - run:
+          name: Semantic release
+          command: |
+            echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > .npmrc
+            yarn
+            yarn semantic-release
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+    - test:
+        filters:
+          tags:
+            ignore:
+              - /^v\d+\.\d+\.\d+$/
+    - release:
+        filters:
+          branches:
+            only:
+              - master
+        requires:
+          - test

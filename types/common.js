@@ -2,6 +2,8 @@
 
 import type Redis from 'ioredis';
 
+export type redisTimeUnit = 'EX' | 'PX';
+
 export interface TagSetInterface {
   /**
    * Create a new TagSet instance.
@@ -31,7 +33,7 @@ export interface TagSetInterface {
    *
    * @return {Promise<string>}
    */
-  getNamespace(): Promise<string>;
+  getNamespace(timeUnit: ?redisTimeUnit, ttl: ?number): Promise<string>;
 
   /**
    * Get an array of tag identifiers for all of the tags in the set.

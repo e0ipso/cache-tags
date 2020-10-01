@@ -1,5 +1,7 @@
 // @flow
 
+import type { redisTimeUnit } from '../types/common';
+
 const _ = require('lodash');
 const { map: promiseMap } = require('bluebird');
 
@@ -7,8 +9,24 @@ const TaggedCache = require('./TaggedCache');
 
 type TagRefs = Array<string>;
 type Operation<T = void> = (string, TaggedCache) => Promise<T>;
+type MemberPage = { members: Array<string>, cursor: number };
 
 class RedisTaggedCache extends TaggedCache {
+  /**
+   * RegExp pattern that can be used to find and replace prefixes in tag keys.
+   *
+   * @var {RegExp}
+   */
+  keyPrefixPattern: RegExp;
+
+  /**
+   * {@inheritdoc}
+   */
+  constructor(...args: any) {
+    super(...args);
+    this.keyPrefixPattern = new RegExp(`^${this.store.options.keyPrefix}`);
+  }
+
   /**
    * Store an item in the cache.
    *
@@ -22,13 +40,13 @@ class RedisTaggedCache extends TaggedCache {
   set(
     key: string,
     value: any,
-    ...additionalArgs: [string, number]
+    ...additionalArgs: [redisTimeUnit, number]
   ): Promise<void> {
     return this.tags
-      .getNamespace()
+      .getNamespace(...additionalArgs)
       .then(namespace =>
         Promise.all([
-          this.pushKeys(namespace, key),
+          this.pushKeys(namespace, key, ...additionalArgs),
           super.set(key, value, ...additionalArgs),
         ])
       )
@@ -106,6 +124,89 @@ class RedisTaggedCache extends TaggedCache {
   }
 
   /**
+   * Batch delete cache data belonging to a set of tags. This method performs
+   * deletions incrementally as tag set members are found (using sscan)
+   * instead of collecting all members for all tags and then deleting them
+   * simultaneously.
+   *
+   * {@link https://redis.io/commands/scan}
+   */
+  async batchDeleteWithTags(): Promise<Array<() => void>> {
+    const tagIds = await this.tags.tagIds();
+    return Promise.all(
+      _.map(tagIds, tagId =>
+        this.trampoline(
+          this.batchDeleteTagMembers.bind(this, this.referenceKey(tagId))
+        )
+      )
+    );
+  }
+
+  /**
+   * Takes a tag ID and deletes all associated members in batches.
+   *
+   * This method is intended to be called using the this.trampoline method,
+   * as it deletes the current batch, and returns a function that will delete
+   * the next batch until there are no more members in the tag set.
+   *
+   * @param {string} tagRef
+   *   String representing the reference key of the tag for which
+   *   members should be deleted.
+   * @param {number} cursor
+   *   Number representing the pagination cursor from the redis sscan call.
+   *
+   * @return {function|null}
+   *   Returns a function that can be called to delete the next batch of
+   *   members, or null if no more members exist.
+   *
+   * {@link https://redis.io/commands/scan}
+   */
+  async batchDeleteTagMembers(
+    tagRef: string,
+    cursor: number = 0
+  ): Promise<?() => any> {
+    // Fetch one iteration of tag members for the given tag id.
+    const { cursor: newCursor, members }: MemberPage = await this.getMemberPage(
+      tagRef,
+      cursor
+    );
+
+    // Process given keys.
+    const keysToDelete = _.map(members, key =>
+      key.replace(this.keyPrefixPattern, '')
+    );
+
+    await Promise.all([
+      // Remove all keys from the tag set.
+      ..._.map(keysToDelete, key => this.store.srem(tagRef, key)),
+      // Delete the keys themselves.
+      this.deleteMultiple(keysToDelete),
+    ]);
+
+    if (newCursor > 0) {
+      return this.batchDeleteTagMembers.bind(this, tagRef, newCursor);
+    }
+
+    return null;
+  }
+
+  /**
+   * Utility method that optimizes recursion.
+   *
+   * @param {function} fn
+   *   Function that should be executed until it resolves a value
+   *   that is not another function.
+   *
+   * {@link https://en.wikipedia.org/wiki/Trampoline_(computing)}
+   */
+  async trampoline(fn: () => any) {
+    let result = await fn();
+    while (_.isFunction(result)) {
+      result = await result();
+    }
+  }
+
+  /**
    * Bulk operation on tagged entries.
    *
    * @param {Operation} operation
@@ -157,7 +258,12 @@ class RedisTaggedCache extends TaggedCache {
    * @param {string} reference
    * @return {Promise<void>}
    */
-  pushKeys(namespace: string, key: string): Promise<void> {
+  pushKeys(
+    namespace: string,
+    key: string,
+    timeUnit: ?redisTimeUnit,
+    ttl: ?number
+  ): Promise<void> {
     const fullKey = this.store.options.keyPrefix
       ? `${this.store.options.keyPrefix}${key}`
       : key;
@@ -165,7 +271,16 @@ class RedisTaggedCache extends TaggedCache {
       .split('|')
       .map(segment => this.referenceKey(segment));
     return Promise.all(
-      referenceKeys.map(referenceKey => this.store.sadd(referenceKey, fullKey))
+      referenceKeys.map(async referenceKey => {
+        await this.store.sadd(referenceKey, fullKey);
+        if (timeUnit && ttl) {
+          if (timeUnit === 'EX') {
+            await this.store.expire(referenceKey, ttl);
+          } else {
+            await this.store.pexpire(referenceKey, ttl);
+          }
+        }
+      })
     ).then(() => {});
   }
 
@@ -270,9 +385,7 @@ class RedisTaggedCache extends TaggedCache {
         return (
           intersection
             // We need to remove the Redis prefix. This is un-ideal.
-            .map(key =>
-              key.replace(new RegExp(`^${this.store.options.keyPrefix}`), '')
-            )
+            .map(key => key.replace(this.keyPrefixPattern, ''))
         );
       });
   }
@@ -307,6 +420,25 @@ class RedisTaggedCache extends TaggedCache {
           : output;
       }
     );
+  }
+
+  /**
+   * Gets a page of members in a set.
+   *
+   * @param {string} setKey
+   *   The set key.
+   * @param {number} cursor
+   *   The pagination cursor.
+   *
+   * @return {MemberPage}
+   *   Object containing one pages worth of members for a given cache key.
+   */
+  async getMemberPage(setKey: string, cursor: number = 0): Promise<MemberPage> {
+    const [newCursor, members] = await this.debounce('sscan', setKey, cursor);
+    return {
+      cursor: newCursor,
+      members,
+    };
   }
 }
 

@@ -1,7 +1,11 @@
 // @flow
 
 import typeof Redis from 'ioredis';
-import type { DebouncerInterface, TagSetInterface } from '../types/common';
+import type {
+  DebouncerInterface,
+  TagSetInterface,
+  redisTimeUnit,
+} from '../types/common';
 
 const _ = require('lodash');
 const Debouncer = require('./Debouncer');
@@ -135,7 +139,7 @@ class TaggedCache {
   set(
     key: string,
     value: any,
-    ...additionalArgs: [string, number]
+    ...additionalArgs: [redisTimeUnit, number]
   ): Promise<void> {
     const tKey = this.itemKey(key);
     let args = [tKey, value];
