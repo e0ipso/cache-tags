@@ -45,7 +45,7 @@ jobs:
       - run:
           name: Semantic release
           command: |
-            echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > .npmrc
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             yarn
             yarn semantic-release
 workflows:
