@@ -4,15 +4,20 @@ jobs:
   test:
     runs-on: ubuntu-latest
     services:
-      # Label used to access the service container
       redis:
-        # Docker Hub image
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis-cluster:
         image: grokzen/redis-cluster
         env:
           INITIAL_PORT: 7000
           SLAVES_PER_MASTER: 0
         options: >-
-          --health-cmd "redis-cli -h redis -p 7000 ping"
+          --health-cmd "redis-cli -h redis-cluster -p 7000 ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -28,7 +33,9 @@ jobs:
       - name: Test
         env:
           REDIS_HOST: redis
-          REDIS_PORT: 7000
+          REDIS_PORT: 6379
+          REDIS_CLUSTER_HOST: redis-cluster
+          REDIS_CLUSTER_PORT: 7000
         run: |
           yarn lint
           yarn test-ci

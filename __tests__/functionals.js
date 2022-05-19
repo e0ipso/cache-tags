@@ -136,10 +136,10 @@ describe('Cache Tags', () => {
     const numItems = 200;
 
     beforeAll(() => {
-      redis = new Redis(
-        `${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT ||
-          '6379'}`
-      );
+      redis = new Redis({
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: process.env.REDIS_PORT || '6379',
+      });
     });
     afterAll(() => {
       redis.disconnect();
@@ -153,8 +153,8 @@ describe('Cache Tags', () => {
     beforeAll(() => {
       redis = new Redis.Cluster([
         {
-          host: process.env.REDIS_HOST || '127.0.0.1',
-          port: process.env.REDIS_PORT || '30000',
+          host: process.env.REDIS_CLUSTER_HOST || '127.0.0.1',
+          port: process.env.REDIS_CLUSTER_PORT || '30000',
         },
       ]);
     });
