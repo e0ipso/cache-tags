@@ -5,7 +5,7 @@
 -->
 
 <!--
-  emdaerHash:4f91bcc6fc151fcfeff3ef93238b6cd6
+  emdaerHash:0cc354cb36850b90727b05022f7de50c
 -->
 
 <h1 id="cache-tags-img-src-logo-svg-alt-cache-tags-logo-title-cache-tags-logo-width-100-align-right-">Cache Tags <img src="./logo.svg" alt="Cache Tags logo" title="Cache Tags logo" width="100" align="right"></h1>
@@ -23,7 +23,8 @@ Adds cache tags for bulk invalidation.
 <li><a href="#license">License</a></li>
 </ul>
 <!-- tocstop -->
-<p>· <a href="https://github.com/e0ipso/cache-tags"><img src="https://img.shields.io/actions/workflows/main.yml/badge.svg?branch=master?style=flat-square" alt="GitHub Actions"></a> <a href="https://github.com/emdaer/emdaer"><img src="https://img.shields.io/badge/📓-documented%20with%20emdaer-F06632.svg?style=flat-square" alt="Documented with emdaer"></a></p>
+<p>·
+<img src="https://github.com/github/docs/actions/workflows/test.yml/badge.svg?branch=master" alt="GitHub Actions"> <a href="https://github.com/emdaer/emdaer"><img src="https://img.shields.io/badge/📓-documented%20with%20emdaer-F06632.svg?style=flat-square" alt="Documented with emdaer"></a></p>
 <h2 id="install">Install</h2>
 <ol>
 <li><code>yarn add cache-tags</code></li>
