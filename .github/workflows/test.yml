@@ -8,7 +8,7 @@ jobs:
       redis:
         # Docker Hub image
         image: grokzen/redis-cluster
-        environment:
+        env:
           INITIAL_PORT: 7000
           SLAVES_PER_MASTER: 0
     steps:
