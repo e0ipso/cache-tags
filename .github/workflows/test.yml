@@ -11,6 +11,11 @@ jobs:
         env:
           INITIAL_PORT: 7000
           SLAVES_PER_MASTER: 0
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
