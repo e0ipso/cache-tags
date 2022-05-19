@@ -24,7 +24,8 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 7000-7005:7000-7005steps:
+          - 7000-7005:7000-7005
+    steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
