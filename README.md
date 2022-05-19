@@ -5,7 +5,7 @@
 -->
 
 <!--
-  emdaerHash:09a2bc9ca5c9f635697628a538a5bde7
+  emdaerHash:4f91bcc6fc151fcfeff3ef93238b6cd6
 -->
 
 <h1 id="cache-tags-img-src-logo-svg-alt-cache-tags-logo-title-cache-tags-logo-width-100-align-right-">Cache Tags <img src="./logo.svg" alt="Cache Tags logo" title="Cache Tags logo" width="100" align="right"></h1>
@@ -23,12 +23,12 @@ Adds cache tags for bulk invalidation.
 <li><a href="#license">License</a></li>
 </ul>
 <!-- tocstop -->
-<p>· <a href="https://travis-ci.org/e0ipso/cache-tags/"><img src="https://img.shields.io/travis/e0ipso/cache-tags.svg?style=flat-square" alt="Travis"></a> <a href="https://github.com/emdaer/emdaer"><img src="https://img.shields.io/badge/📓-documented%20with%20emdaer-F06632.svg?style=flat-square" alt="Documented with emdaer"></a></p>
+<p>· <a href="https://github.com/e0ipso/cache-tags"><img src="https://img.shields.io/actions/workflows/main.yml/badge.svg?branch=master?style=flat-square" alt="GitHub Actions"></a> <a href="https://github.com/emdaer/emdaer"><img src="https://img.shields.io/badge/📓-documented%20with%20emdaer-F06632.svg?style=flat-square" alt="Documented with emdaer"></a></p>
 <h2 id="install">Install</h2>
 <ol>
 <li><code>yarn add cache-tags</code></li>
-<li><a href="https://redis.io/download">Install Redis</a> normally. If you want to spin up
-a local cluster for testing you can use: <code>yarn create-cluster</code> and
+<li><a href="https://redis.io/download">Install Redis</a> normally. If you want to spin up a
+local cluster for testing you can use: <code>yarn create-cluster</code> and
 <code>yarn destroy-cluster</code>.</li>
 </ol>
 <h2 id="why-">Why?</h2>
