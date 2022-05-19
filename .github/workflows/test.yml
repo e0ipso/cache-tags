@@ -11,6 +11,8 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          - 6379:6379
       redis-cluster:
         image: grokzen/redis-cluster
         env:
@@ -21,7 +23,8 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    steps:
+        ports:
+          - 7000-7005:7000-7005steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
@@ -32,9 +35,6 @@ jobs:
           yarn --pure-lockfile
       - name: Test
         env:
-          REDIS_HOST: redis
-          REDIS_PORT: 6379
-          REDIS_CLUSTER_HOST: redis-cluster
           REDIS_CLUSTER_PORT: 7000
         run: |
           yarn lint
