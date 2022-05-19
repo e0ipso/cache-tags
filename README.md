@@ -5,7 +5,7 @@
 -->
 
 <!--
-  emdaerHash:0cc354cb36850b90727b05022f7de50c
+  emdaerHash:76a4f0724fb4c8c5498f941798734bc5
 -->
 
 <h1 id="cache-tags-img-src-logo-svg-alt-cache-tags-logo-title-cache-tags-logo-width-100-align-right-">Cache Tags <img src="./logo.svg" alt="Cache Tags logo" title="Cache Tags logo" width="100" align="right"></h1>
@@ -24,12 +24,12 @@ Adds cache tags for bulk invalidation.
 </ul>
 <!-- tocstop -->
 <p>·
-<img src="https://github.com/github/docs/actions/workflows/test.yml/badge.svg?branch=master" alt="GitHub Actions"> <a href="https://github.com/emdaer/emdaer"><img src="https://img.shields.io/badge/📓-documented%20with%20emdaer-F06632.svg?style=flat-square" alt="Documented with emdaer"></a></p>
+<img src="https://github.com/github/docs/actions/workflows/test.yml/badge.svg?branch=master" alt="GitHub Actions"><a href="https://github.com/emdaer/emdaer"><img src="https://img.shields.io/badge/📓-documented%20with%20emdaer-F06632.svg?style=flat-square" alt="Documented with emdaer"></a></p>
 <h2 id="install">Install</h2>
 <ol>
 <li><code>yarn add cache-tags</code></li>
-<li><a href="https://redis.io/download">Install Redis</a> normally. If you want to spin up a
-local cluster for testing you can use: <code>yarn create-cluster</code> and
+<li><a href="https://redis.io/download">Install Redis</a> normally. If you want to spin up
+a local cluster for testing you can use: <code>yarn create-cluster</code> and
 <code>yarn destroy-cluster</code>.</li>
 </ol>
 <h2 id="why-">Why?</h2>
