@@ -3,22 +3,29 @@ on: [push]
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      # Label used to access the service container
+      redis:
+        # Docker Hub image
+        image: redis
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 16.15
           cache: yarn
-      - name: Set up Ruby 2.7
-        uses: actions/setup-ruby@v1
-        with:
-          ruby-version: 2.7
       - name: Setup
         run: |
-          gem install redis
           yarn --pure-lockfile
-          yarn create-cluster
       - name: Test
+        env:
+          REDIS_HOST: redis
         run: |
           yarn lint
           yarn test-ci
