@@ -5,7 +5,7 @@
 -->
 
 <!--
-  emdaerHash:4b84e295c8456ceab5c6f727a209a330
+  emdaerHash:1610b13c3b64eda4636356ddcdb1e3e2
 -->
 
 <h1 id="cache-tags-img-src-logo-svg-alt-cache-tags-logo-title-cache-tags-logo-width-100-align-right-">Cache Tags <img src="./logo.svg" alt="Cache Tags logo" title="Cache Tags logo" width="100" align="right"></h1>
@@ -24,7 +24,8 @@ Adds cache tags for bulk invalidation.
 </ul>
 <!-- tocstop -->
 <p>·
-[<img src="https://github.com/e0ipso/cache-tags/actions/workflows/test.yml/badge.svg?branch=master" alt="GitHub Actions">)(<a href="https://github.com/e0ipso/cache-tags)[![Documented">https://github.com/e0ipso/cache-tags)[![Documented</a> with emdaer](<a href="https://img.shields.io/badge/📓-documented%20with%20emdaer-F06632.svg?style=flat-square)](https://github.com/emdaer/emdaer)">https://img.shields.io/badge/📓-documented%20with%20emdaer-F06632.svg?style=flat-square)](https://github.com/emdaer/emdaer)</a></p>
+[<img src="https://github.com/e0ipso/cache-tags/actions/workflows/test.yml/badge.svg?branch=master" alt="GitHub Actions">)(<a href="https://github.com/e0ipso/cache-tags">https://github.com/e0ipso/cache-tags</a>)
+<a href="https://github.com/emdaer/emdaer"><img src="https://img.shields.io/badge/📓-documented%20with%20emdaer-F06632.svg?style=flat-square" alt="Documented with emdaer"></a></p>
 <h2 id="install">Install</h2>
 <ol>
 <li><code>yarn add cache-tags</code></li>
