@@ -16,16 +16,9 @@ jobs:
       - name: Setup
         run: |
           git fetch --tags
-          yarn global add greenkeeper-lockfile@1
           gem install redis
-          greenkeeper-lockfile-update
           yarn create-cluster
       - name: Test
         run: |
           yarn lint
           yarn test-ci
-          yarn add --no-lockfile coveralls
-      - name: Teardown
-        run: |
-          greenkeeper-lockfile-upload
-          
