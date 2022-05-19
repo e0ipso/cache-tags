@@ -52,6 +52,8 @@ jobs:
           node-version: 16.15
           cache: yarn
       - name: Release
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           yarn --pure-lockfile
           yarn semantic-release
