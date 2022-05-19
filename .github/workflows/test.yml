@@ -9,6 +9,10 @@ jobs:
         with:
           node-version: 16.15
           cache: yarn
+      - name: Set up Ruby 2.7
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7
       - name: Setup
         run: |
           git fetch --tags
