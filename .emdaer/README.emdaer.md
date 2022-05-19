@@ -10,11 +10,13 @@
 
 <!--emdaer-t
   - '@emdaer/transform-table-of-contents'
---> ·
- [![GitHub Actions](https://github.com/e0ipso/cache-tags/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/e0ipso/cache-tags)
-<!--emdaer-p
+--> · <!--emdaer-p
  - '@emdaer/plugin-shields'
  - shields:
+     - alt: 'GitHub Actions'
+       image: 'github/workflows/status/e0ipso/cache-tags/test.yml/master'
+       link: 'https://github.com/e0ipso/cache-tags/'
+       style: 'flat-square'
      - alt: 'Documented with emdaer'
        image: 'badge/📓-documented%20with%20emdaer-F06632.svg'
        link: 'https://github.com/emdaer/emdaer'
