@@ -5,7 +5,7 @@
 -->
 
 <!--
-  emdaerHash:1a08ee147a84a2c5adc3c5763ca31045
+  emdaerHash:09a2bc9ca5c9f635697628a538a5bde7
 -->
 
 <h1 id="cache-tags-img-src-logo-svg-alt-cache-tags-logo-title-cache-tags-logo-width-100-align-right-">Cache Tags <img src="./logo.svg" alt="Cache Tags logo" title="Cache Tags logo" width="100" align="right"></h1>
@@ -102,4 +102,4 @@ Promise.resolve()
 </details>
 
 <h2 id="license">License</h2>
-<p>cache-tags is <a href="./LICENSE">GPL-2.0 licensed</a>.</p>
+<p>cache-tags is <a href="./LICENSE">MIT licensed</a>.</p>
