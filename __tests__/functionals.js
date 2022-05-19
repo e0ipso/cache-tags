@@ -152,8 +152,10 @@ describe('Cache Tags', () => {
 
     beforeAll(() => {
       redis = new Redis.Cluster([
-        `${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT ||
-          '30000'}`,
+        {
+          host: process.env.REDIS_HOST || '127.0.0.1',
+          port: process.env.REDIS_PORT || '30000',
+        },
       ]);
     });
     afterAll(() => {
