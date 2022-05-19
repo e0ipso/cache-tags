@@ -11,7 +11,7 @@
 <!--emdaer-t
   - '@emdaer/transform-table-of-contents'
 --> ·
- ![GitHub Actions](https://github.com/github/docs/actions/workflows/test.yml/badge.svg?branch=master)<!--emdaer-p
+ [![GitHub Actions](https://github.com/e0ipso/cache-tags/actions/workflows/test.yml/badge.svg?branch=master))(https://github.com/e0ipso/cache-tags)<!--emdaer-p
  - '@emdaer/plugin-shields'
  - shields:
      - alt: 'Documented with emdaer'
