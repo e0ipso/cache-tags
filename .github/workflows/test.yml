@@ -1,0 +1,27 @@
+name: Test
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.15
+          cache: yarn
+      - name: Setup
+        run: |
+          git fetch --tags
+          yarn global add greenkeeper-lockfile@1
+          gem install redis
+          greenkeeper-lockfile-update
+          yarn create-cluster
+      - name: Test
+        run: |
+          yarn lint
+          yarn test-ci
+          yarn add --no-lockfile coveralls
+      - name: Teardown
+        run: |
+          greenkeeper-lockfile-upload
+          
