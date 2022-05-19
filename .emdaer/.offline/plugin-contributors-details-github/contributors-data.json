@@ -25,12 +25,13 @@
     "email": null,
     "hireable": null,
     "bio": "Engineer and programmer focused on online applications.",
-    "public_repos": 73,
+    "twitter_username": null,
+    "public_repos": 82,
     "public_gists": 36,
-    "followers": 106,
+    "followers": 131,
     "following": 50,
     "created_at": "2011-10-20T14:27:43Z",
-    "updated_at": "2019-08-12T17:45:36Z"
+    "updated_at": "2022-05-19T10:22:48Z"
   },
   {
     "login": "elliotttf",
@@ -52,17 +53,18 @@
     "type": "User",
     "site_admin": false,
     "name": "Elliott Foster",
-    "company": "Four Kitchens",
+    "company": "Episource",
     "blog": "https://codebrews.com",
     "location": "Austin, TX",
     "email": null,
     "hireable": null,
     "bio": "Software architect with an interest in distributed systems and elegant solutions.",
-    "public_repos": 84,
-    "public_gists": 38,
-    "followers": 52,
+    "twitter_username": null,
+    "public_repos": 88,
+    "public_gists": 39,
+    "followers": 58,
     "following": 12,
     "created_at": "2010-10-20T16:40:28Z",
-    "updated_at": "2019-08-13T23:52:45Z"
+    "updated_at": "2022-01-31T17:09:53Z"
   }
 ]

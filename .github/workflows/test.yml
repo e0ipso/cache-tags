@@ -1,0 +1,59 @@
+name: Test and Maybe Release
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+      redis-cluster:
+        image: grokzen/redis-cluster
+        env:
+          INITIAL_PORT: 7000
+          SLAVES_PER_MASTER: 0
+        options: >-
+          --health-cmd "redis-cli -h redis-cluster -p 7000 ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 7000-7005:7000-7005
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.15
+          cache: yarn
+      - name: Setup
+        run: |
+          yarn --pure-lockfile
+      - name: Test
+        env:
+          REDIS_CLUSTER_PORT: 7000
+        run: |
+          yarn lint
+          yarn test-ci
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.15
+          cache: yarn
+      - name: Release
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          yarn --pure-lockfile
+          yarn semantic-release

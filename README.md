@@ -5,7 +5,7 @@
 -->
 
 <!--
-  emdaerHash:1a08ee147a84a2c5adc3c5763ca31045
+  emdaerHash:261cd76b37249fc3c9f4bc01300c09c6
 -->
 
 <h1 id="cache-tags-img-src-logo-svg-alt-cache-tags-logo-title-cache-tags-logo-width-100-align-right-">Cache Tags <img src="./logo.svg" alt="Cache Tags logo" title="Cache Tags logo" width="100" align="right"></h1>
@@ -23,7 +23,7 @@ Adds cache tags for bulk invalidation.
 <li><a href="#license">License</a></li>
 </ul>
 <!-- tocstop -->
-<p>· <a href="https://travis-ci.org/e0ipso/cache-tags/"><img src="https://img.shields.io/travis/e0ipso/cache-tags.svg?style=flat-square" alt="Travis"></a> <a href="https://github.com/emdaer/emdaer"><img src="https://img.shields.io/badge/📓-documented%20with%20emdaer-F06632.svg?style=flat-square" alt="Documented with emdaer"></a></p>
+<p>· <a href="https://github.com/e0ipso/cache-tags/"><img src="https://img.shields.io/github/workflows/status/e0ipso/cache-tags/test.yml/master?style=flat-square" alt="GitHub Actions"></a> <a href="https://github.com/emdaer/emdaer"><img src="https://img.shields.io/badge/📓-documented%20with%20emdaer-F06632.svg?style=flat-square" alt="Documented with emdaer"></a></p>
 <h2 id="install">Install</h2>
 <ol>
 <li><code>yarn add cache-tags</code></li>
@@ -102,4 +102,4 @@ Promise.resolve()
 </details>
 
 <h2 id="license">License</h2>
-<p>cache-tags is <a href="./LICENSE">GPL-2.0 licensed</a>.</p>
+<p>cache-tags is <a href="./LICENSE">MIT licensed</a>.</p>

@@ -13,9 +13,9 @@
 --> · <!--emdaer-p
  - '@emdaer/plugin-shields'
  - shields:
-     - alt: 'Travis'
-       image: 'travis/e0ipso/cache-tags.svg'
-       link: 'https://travis-ci.org/e0ipso/cache-tags/'
+     - alt: 'GitHub Actions'
+       image: 'github/workflows/status/e0ipso/cache-tags/test.yml/master'
+       link: 'https://github.com/e0ipso/cache-tags/'
        style: 'flat-square'
      - alt: 'Documented with emdaer'
        image: 'badge/📓-documented%20with%20emdaer-F06632.svg'
