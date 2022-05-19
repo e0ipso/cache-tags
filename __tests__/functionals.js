@@ -136,7 +136,7 @@ describe('Cache Tags', () => {
     const numItems = 200;
 
     beforeAll(() => {
-      redis = new Redis(`${process.env.REDIS_HOST ?? '127.0.0.1'}:${process.env.REDIS_PORT ?? '6379'}`);
+      redis = new Redis(`${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT || '6379'}`);
     });
     afterAll(() => {
       redis.disconnect();
