@@ -15,8 +15,8 @@ jobs:
           ruby-version: 2.7
       - name: Setup
         run: |
-          git fetch --tags
           gem install redis
+          yarn --pure-lockfile
           yarn create-cluster
       - name: Test
         run: |
