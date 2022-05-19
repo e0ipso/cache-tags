@@ -1,4 +1,4 @@
-name: Test
+name: Test and Maybe Release
 on: [push]
 jobs:
   test:
@@ -22,3 +22,18 @@ jobs:
         run: |
           yarn lint
           yarn test-ci
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.15
+          cache: yarn
+      - name: Release
+        run: |
+          yarn --pure-lockfile
+          yarn semantic-release
