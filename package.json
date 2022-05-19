@@ -7,7 +7,7 @@
   "contributors": [
     "Elliott Foster <elliottf@codebrews.com> (https://codebrews.com)"
   ],
-  "license": "GPL-2.0",
+  "license": "MIT",
   "scripts": {
     "build": "./node_modules/.bin/babel src -d lib --copy-files --delete-dir-on-start",
     "prepare": "yarn build",
